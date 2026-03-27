@@ -1,0 +1,2071 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f1117">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-title" content="An Nhiên">
+  <title>SuperLiar Dice</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #1a1d27;
+      --bg-card: #232733;
+      --bg-hover: #2a2f3d;
+      --text-primary: #e8eaed;
+      --text-secondary: #9aa0a6;
+      --text-muted: #5f6368;
+      --accent: #8ab4f8;
+      --accent-hover: #aecbfa;
+      --success: #81c995;
+      --warning: #fdd663;
+      --danger: #f28b82;
+      --danger-hover: #ee675c;
+      --border: #3c4043;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.3);
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --transition: 0.2s ease;
+    }
+    html {
+      height: -webkit-fill-available;
+      overflow: hidden;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 0);
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    #app {
+      width: 100%;
+      max-width: 900px;
+      padding: 24px;
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+      height: 100dvh;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+    }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font);
+      min-height: 44px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-danger { background: var(--danger); color: #000; }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .home-header { text-align: center; margin-bottom: 32px; }
+    .home-header h1 {
+      font-size: 36px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .home-header p { color: var(--text-secondary); font-size: 16px; }
+    .api-key-section { margin-bottom: 24px; }
+    .api-key-section input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 16px;
+      font-family: var(--font);
+    }
+    .api-key-section input:focus { outline: none; border-color: var(--accent); }
+    .api-key-section label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+    .difficulty-selector { display: flex; gap: 8px; margin-bottom: 24px; }
+    .diff-card {
+      flex: 1; padding: 10px 6px; border: 2px solid var(--border); border-radius: var(--radius);
+      cursor: pointer; transition: all var(--transition); background: var(--bg-card); text-align: center;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+      position: relative;
+    }
+    .diff-card:hover { border-color: var(--accent); }
+    .diff-card.selected { border-color: var(--accent); background: rgba(138,180,248,0.1); }
+    .diff-card h3 { font-size: 15px; margin-bottom: 2px; }
+    .diff-card p { font-size: 11px; color: var(--text-secondary); }
+    .diff-card .recommend-badge {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #000;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+    .start-btn-wrap { text-align: center; }
+    .start-btn-wrap .btn { padding: 14px 48px; font-size: 18px; }
+    .stats-overview { display: flex; gap: 12px; margin-bottom: 16px; }
+    .stat-box { flex: 1; text-align: center; padding: 12px; background: var(--bg-secondary); border-radius: var(--radius-sm); }
+    .stat-box .stat-value { font-size: 24px; font-weight: 700; }
+    .stat-box .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stats-card { padding: 16px; }
+    .stats-card h4 { font-size: 15px; margin-bottom: 12px; color: var(--accent); }
+    .stats-card .stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+    .stats-card .stat-row .label { color: var(--text-secondary); }
+    .stats-card .trend-bar { display: flex; gap: 3px; margin-top: 8px; }
+    .stats-card .trend-bar .bar { flex: 1; height: 20px; border-radius: 3px; }
+    .bar-win { background: var(--success); }
+    .bar-lose { background: var(--danger); }
+    .bar-empty { background: var(--bg-secondary); }
+    .level-up-hint {
+      margin-top: 8px; padding: 8px 12px; background: rgba(129,201,149,0.1);
+      border-radius: var(--radius-sm); color: var(--success); font-size: 12px; text-align: center;
+    }
+    .game-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+      position: sticky; top: 0; z-index: 10; background: var(--bg-primary); padding: 8px 0;
+    }
+    .game-header .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .game-header .difficulty-badge { padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+    .badge-medium { background: rgba(138,180,248,0.2); color: var(--accent); }
+    .badge-hard { background: rgba(253,214,99,0.2); color: var(--warning); }
+    .badge-expert { background: rgba(242,139,130,0.2); color: var(--danger); }
+    .dice-area { text-align: center; margin-bottom: 16px; user-select: none; -webkit-user-select: none; }
+    .dice-area .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    .dice-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .die-svg {
+      width: 64px; height: 64px; border-radius: 14px; overflow: hidden; flex-shrink: 0;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transition: transform 0.3s ease;
+    }
+    .die-svg svg { width: 100%; height: 100%; display: block; }
+    .die-hidden-new {
+      width: 64px; height: 64px; border-radius: 14px;
+      background: linear-gradient(135deg, #1e88e5, #1565c0);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: rgba(255,255,255,0.6); flex-shrink: 0;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    .die-match-glow { box-shadow: 0 0 12px 4px rgba(129,201,149,0.6); transform: scale(1.05); }
+    .die-wild-glow { box-shadow: 0 0 8px 2px rgba(229,57,53,0.4); }
+    .ai-speech-wrap {
+      display: flex; align-items: flex-end; gap: 8px; margin: 10px 0;
+      justify-content: flex-start; padding: 0 8px;
+      animation: fadeInUp 0.3s ease;
+    }
+    .ai-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #f8bbd0, #f48fb1);
+      overflow: hidden; border: 2px solid #f48fb1;
+      box-shadow: 0 2px 8px rgba(244,143,177,0.3);
+    }
+    .ai-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .ai-avatar-placeholder {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fff;
+      background: linear-gradient(135deg, #f8bbd0, #e91e63);
+    }
+    .ai-speech {
+      background: linear-gradient(135deg, #2a1f2d, #1f1a2e);
+      border: 1px solid rgba(244,143,177,0.2);
+      border-radius: 4px 16px 16px 16px; padding: 10px 14px; font-size: 14px;
+      color: var(--text-primary); max-width: 260px; line-height: 1.5;
+      position: relative; box-shadow: 0 2px 12px rgba(244,143,177,0.08);
+    }
+    .ai-speech::before {
+      content: 'An Nhi\00EAn \1F338'; display: block; font-size: 11px;
+      color: #f48fb1; margin-bottom: 4px; font-weight: 600;
+    }
+    .ai-thinking-wrap {
+      display: flex; align-items: center; gap: 8px; padding: 0 8px;
+    }
+    .ai-thinking-bubble {
+      display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+      background: linear-gradient(135deg, #2a1f2d, #1f1a2e);
+      border: 1px solid rgba(244,143,177,0.2);
+      border-radius: 4px 16px 16px 16px; font-size: 13px; color: var(--text-secondary);
+    }
+    .typing-dots { display: flex; gap: 4px; }
+    .typing-dots span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #f48fb1; animation: typingBounce 1.4s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+    .ai-avatar-sm { width: 24px; height: 24px; border-width: 1.5px; }
+    .ai-avatar-sm .ai-avatar-placeholder { font-size: 9px; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .last-bid-display {
+      text-align: center; padding: 12px; font-size: 15px;
+      color: var(--text-secondary); font-style: italic; min-height: 44px;
+    }
+    .bid-controls { padding: 20px; margin: 16px 0; }
+    .bid-controls .controls-row { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .bid-controls select {
+      padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text-primary); font-size: 16px;
+      font-family: var(--font); min-height: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .bid-controls select:focus { outline: none; border-color: var(--accent); }
+    .bid-controls label { font-size: 13px; color: var(--text-secondary); }
+    .chay-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; min-height: 44px; justify-content: center; }
+    .chay-toggle input[type="checkbox"] { display: none; }
+    .chay-toggle .toggle-track {
+      width: 48px; height: 28px; background: #555; border-radius: 14px; position: relative;
+      cursor: pointer; transition: background 0.25s; flex-shrink: 0; touch-action: manipulation;
+    }
+    .chay-toggle .toggle-track::after {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px;
+      background: #fff; border-radius: 50%; transition: transform 0.25s;
+    }
+    .chay-toggle input:checked + .toggle-track { background: var(--accent); }
+    .chay-toggle input:checked + .toggle-track::after { transform: translateX(20px); }
+    .action-buttons { display: flex; gap: 12px; }
+    .action-buttons .btn { flex: 1; padding: 12px; font-size: 16px; }
+    .coach-panel { margin: 16px 0; padding: 16px; border-left: 4px solid var(--accent); display: none; }
+    .coach-panel.visible { display: block; }
+    .coach-panel.rating-excellent { border-left-color: var(--success); }
+    .coach-panel.rating-good { border-left-color: var(--accent); }
+    .coach-panel.rating-risky { border-left-color: var(--warning); }
+    .coach-panel.rating-bad { border-left-color: var(--danger); }
+    .coach-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .coach-header .rating-icon { font-size: 20px; }
+    .coach-header .rating-text { font-weight: 700; font-size: 16px; }
+    .coach-header .probability { color: var(--text-secondary); font-size: 14px; }
+    .coach-body { font-size: 14px; line-height: 1.6; color: var(--text-secondary); }
+    .coach-body .suggestion { color: var(--accent); margin-top: 8px; }
+    .coach-actions { display: flex; gap: 12px; margin-top: 12px; }
+    .reveal-result { text-align: center; padding: 20px 16px; }
+    .reveal-result h2 { font-size: 40px; margin-bottom: 8px; font-weight: 800; }
+    .reveal-result .result-win { color: var(--success); }
+    .reveal-result .result-lose { color: var(--danger); }
+    .reveal-summary { font-size: 15px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6; }
+    .reveal-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 16px; }
+    .analysis-tabs {
+      display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .analysis-tabs::-webkit-scrollbar { display: none; }
+    .analysis-tab {
+      padding: 10px 20px; background: none; border: none; color: var(--text-secondary);
+      font-size: 14px; cursor: pointer; border-bottom: 2px solid transparent;
+      font-family: var(--font); transition: all var(--transition); white-space: nowrap;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px;
+    }
+    .analysis-tab:hover { color: var(--text-primary); }
+    .analysis-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .analysis-content { display: none; }
+    .analysis-content.active { display: block; }
+    .report-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .turn-timeline { margin: 16px 0; }
+    .turn-item {
+      display: flex; align-items: flex-start; gap: 12px; padding: 12px;
+      margin-bottom: 8px; border-radius: var(--radius-sm); background: var(--bg-secondary);
+    }
+    .turn-item .turn-dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .dot-correct { background: var(--success); }
+    .dot-risky { background: var(--warning); }
+    .dot-wrong { background: var(--danger); }
+    .dot-ai { background: var(--accent); opacity: 0.6; }
+    .dot-ai-good { background: var(--accent); }
+    .dot-ai-risky { background: #f28b82; opacity: 0.7; }
+    .lesson-section { margin-bottom: 20px; }
+    .lesson-section h4 { font-size: 15px; margin-bottom: 12px; color: var(--accent); }
+    .lesson-item {
+      padding: 12px; margin-bottom: 8px; border-radius: var(--radius-sm);
+      background: var(--bg-secondary); font-size: 14px; line-height: 1.6;
+    }
+    .lesson-item .turn-ref { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ai-thinking { display: flex; align-items: center; gap: 8px; padding: 12px; color: var(--text-secondary); font-size: 14px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease; }
+    @keyframes diceFlip { 0% { transform: rotateX(0); } 50% { transform: rotateX(90deg); } 100% { transform: rotateX(0); } }
+    .dice-flip { animation: diceFlip 0.5s ease; }
+
+    /* Divider between AI and player areas */
+    .area-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+      opacity: 0.6;
+    }
+
+    /* Wheel Picker */
+    .wheel-picker-container {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .wheel-picker {
+      position: relative;
+      height: 120px;
+      width: 100px;
+      overflow: hidden;
+    }
+    .wheel-picker-scroll {
+      height: 100%;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .wheel-picker-scroll::-webkit-scrollbar { display: none; }
+    .wheel-picker-item {
+      height: 40px;
+      scroll-snap-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--text-muted);
+      transition: color 0.15s, transform 0.15s;
+      user-select: none;
+    }
+    .wheel-picker-item.selected {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 24px;
+    }
+    .wheel-picker-highlight {
+      position: absolute;
+      top: 40px;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: rgba(138,180,248,0.1);
+      border-radius: 10px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .wheel-picker-mask-top, .wheel-picker-mask-bottom {
+      position: absolute;
+      left: 0; right: 0;
+      height: 40px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .wheel-picker-mask-top {
+      top: 0;
+      background: linear-gradient(to bottom, var(--bg-card), transparent);
+    }
+    .wheel-picker-mask-bottom {
+      bottom: 0;
+      background: linear-gradient(to top, var(--bg-card), transparent);
+    }
+    .wheel-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    /* Chat-style turn timeline */
+    .turn-item-player {
+      display: flex; justify-content: flex-end; margin-bottom: 8px;
+    }
+    .turn-item-ai {
+      display: flex; justify-content: flex-start; margin-bottom: 8px; gap: 8px;
+    }
+    .turn-bubble-player {
+      max-width: 80%; padding: 10px 14px; border-radius: 16px 16px 4px 16px;
+      background: rgba(129,201,149,0.15); border: 1px solid rgba(129,201,149,0.2);
+      font-size: 14px; line-height: 1.5;
+    }
+    .turn-bubble-ai {
+      max-width: 80%; padding: 10px 14px; border-radius: 4px 16px 16px 16px;
+      background: rgba(138,180,248,0.1); border: 1px solid rgba(138,180,248,0.15);
+      font-size: 14px; line-height: 1.5;
+    }
+    .turn-avatar-mini {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #f8bbd0, #e91e63);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff; margin-top: 2px;
+    }
+
+    /* Wheel scroll arrows */
+    .wheel-arrow {
+      text-align: center; color: var(--text-muted); font-size: 14px;
+      padding: 4px; cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wheel-arrow:active { color: var(--accent); }
+
+    /* API key saved indicator */
+    .api-key-saved {
+      font-size: 13px; color: var(--success); padding: 8px 0;
+    }
+    .api-key-saved a {
+      color: var(--accent); cursor: pointer; margin-left: 8px; text-decoration: underline;
+    }
+
+    /* Shake Screen */
+    .shake-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .dice-cup {
+      width: 120px;
+      height: 160px;
+      background: linear-gradient(180deg, #4a5568, #2d3748);
+      border-radius: 20px 20px 30px 30px;
+      position: relative;
+      margin: 20px auto;
+      cursor: pointer;
+      transition: transform 0.1s;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.1);
+    }
+    .dice-cup::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      left: -10px;
+      right: -10px;
+      height: 30px;
+      background: linear-gradient(180deg, #5a6577, #4a5568);
+      border-radius: 16px 16px 4px 4px;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+      transition: transform 0.4s ease;
+    }
+    .dice-cup.shaking {
+      animation: cupShake 0.5s ease-in-out;
+    }
+    .dice-cup.revealed::before {
+      transform: translateY(-60px) rotate(-15deg);
+    }
+    @keyframes cupShake {
+      0%, 100% { transform: rotate(0deg); }
+      10% { transform: rotate(-12deg) translateY(-4px); }
+      20% { transform: rotate(12deg) translateY(-2px); }
+      30% { transform: rotate(-10deg) translateY(-6px); }
+      40% { transform: rotate(10deg) translateY(-2px); }
+      50% { transform: rotate(-8deg) translateY(-4px); }
+      60% { transform: rotate(8deg) translateY(-2px); }
+      70% { transform: rotate(-5deg); }
+      80% { transform: rotate(5deg); }
+      90% { transform: rotate(-2deg); }
+    }
+    .shake-hint {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-top: 16px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    .dice-reveal-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .dice-reveal-row.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .report-grid { grid-template-columns: 1fr; }
+      .die-svg, .die-hidden-new { width: 56px; height: 56px; }
+      .dice-row { gap: 8px; }
+      .bid-controls .controls-row { flex-direction: column; align-items: stretch; }
+      .bid-controls .controls-row > div { display: flex; justify-content: space-between; align-items: center; }
+      .bid-controls select { min-width: 120px; }
+      .coach-panel { width: 100%; }
+      .coach-body { font-size: 15px; }
+      #app { padding: 16px; padding-bottom: env(safe-area-inset-bottom, 20px); }
+      .diff-card { padding: 8px 4px; }
+      .diff-card h3 { font-size: 14px; }
+      .diff-card p { font-size: 10px; }
+    }
+
+    /* PWA Install Banner */
+    #pwa-banner {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: linear-gradient(135deg, rgba(138,180,248,0.15), rgba(129,201,149,0.1));
+      border: 1px solid rgba(138,180,248,0.3);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #pwa-banner.show { display: flex; }
+    #pwa-banner .pwa-icon { font-size: 28px; flex-shrink: 0; }
+    #pwa-banner .pwa-text { flex: 1; }
+    #pwa-banner .pwa-text strong { display: block; font-size: 14px; color: var(--text-primary); }
+    #pwa-banner .pwa-text span { font-size: 12px; color: var(--text-secondary); }
+    #pwa-banner .pwa-btn {
+      background: var(--accent); color: #000; border: none;
+      border-radius: var(--radius-sm); padding: 8px 14px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      white-space: nowrap; touch-action: manipulation;
+    }
+    #pwa-dismiss {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 18px; cursor: pointer; padding: 0 0 0 4px; line-height: 1;
+    }
+
+    /* iOS install modal */
+    #ios-modal {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.7);
+      align-items: flex-end; justify-content: center;
+      padding: 0 16px 16px;
+    }
+    #ios-modal.show { display: flex; }
+    #ios-modal .ios-sheet {
+      background: var(--bg-card);
+      border-radius: 20px 20px 16px 16px;
+      padding: 24px;
+      width: 100%; max-width: 420px;
+      text-align: center;
+    }
+    #ios-modal .ios-sheet h3 { font-size: 18px; margin-bottom: 8px; }
+    #ios-modal .ios-sheet p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+    #ios-modal .ios-steps { text-align: left; margin-bottom: 20px; }
+    #ios-modal .ios-step {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    #ios-modal .ios-step:last-child { border-bottom: none; }
+    #ios-modal .ios-step .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent); color: #000;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 13px; flex-shrink: 0;
+    }
+    #ios-modal .ios-step .step-icon { font-size: 22px; }
+    #ios-modal .btn-close-modal {
+      width: 100%; padding: 14px;
+      background: var(--bg-secondary); color: var(--text-primary);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- ===== HOME SCREEN ===== -->
+    <div id="screen-home" class="screen active">
+      <div class="home-header">
+        <h1>SuperLiar Dice</h1>
+      </div>
+
+      <!-- PWA Install Banner -->
+      <div id="pwa-banner">
+        <div class="pwa-icon">📲</div>
+        <div class="pwa-text">
+          <strong>Thêm vào màn hình chính</strong>
+          <span>Chơi offline, không cần trình duyệt</span>
+        </div>
+        <button class="pwa-btn" id="pwa-install-btn">Cài đặt</button>
+        <button id="pwa-dismiss">✕</button>
+      </div>
+
+      <!-- iOS install modal -->
+      <div id="ios-modal">
+        <div class="ios-sheet">
+          <h3>📲 Thêm vào màn hình chính</h3>
+          <p>Cài như app thật, chơi offline không cần Safari</p>
+          <div class="ios-steps">
+            <div class="ios-step">
+              <div class="step-num">1</div>
+              <div class="step-icon">⎙</div>
+              <div>Nhấn nút <strong>Chia sẻ</strong> (biểu tượng hình vuông + mũi tên lên) ở thanh Safari bên dưới</div>
+            </div>
+            <div class="ios-step">
+              <div class="step-num">2</div>
+              <div class="step-icon">➕</div>
+              <div>Chọn <strong>"Thêm vào Màn hình chính"</strong></div>
+            </div>
+            <div class="ios-step">
+              <div class="step-num">3</div>
+              <div class="step-icon">✅</div>
+              <div>Nhấn <strong>"Thêm"</strong> — xong!</div>
+            </div>
+          </div>
+          <button class="btn-close-modal" id="ios-modal-close">Đã hiểu</button>
+        </div>
+      </div>
+      <div id="apiKeySection" class="api-key-section card">
+        <label for="apiKeyInput">Gemini API Key (dùng cho Medium/Hard/Coach)</label>
+        <div style="display:flex;gap:8px;">
+          <input type="password" id="apiKeyInput" placeholder="AIza..." autocomplete="off" style="flex:1;">
+          <button class="btn btn-primary" id="btnSaveKey" style="padding:10px 16px;font-size:14px;white-space:nowrap;">L&#432;u</button>
+        </div>
+      </div>
+      <div id="apiKeySaved" class="api-key-saved" style="display:none;">&#10003; API Key &#273;ã l&#432;u <a id="btnEditApiKey">S&#7917;a</a></div>
+      <div class="difficulty-selector">
+        <div class="diff-card" data-diff="medium"><h3>Easy</h3><p>Logic c&#417; b&#7843;n</p></div>
+        <div class="diff-card selected" data-diff="hard"><span class="recommend-badge">N&#234;n ch&#7885;n</span><h3>Medium</h3><p>Gemini Flash Lite</p></div>
+        <div class="diff-card" data-diff="expert"><h3>Hard</h3><p>Gemini Pro</p></div>
+      </div>
+      <div class="start-btn-wrap" style="margin-top:16px;margin-bottom:24px;"><button class="btn btn-primary" id="btnStart" style="padding:16px 56px;font-size:20px;border-radius:var(--radius);width:100%;max-width:320px;">Ch&#417;i</button></div>
+      <div id="stats-dashboard">
+        <div class="stats-overview">
+          <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">T&#7893;ng ván</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-winrate">0%</div><div class="stat-label">Win Rate</div></div>
+          <div class="stat-box"><div class="stat-value" id="stat-streak">0</div><div class="stat-label">Streak</div></div>
+        </div>
+        <div class="stats-grid">
+          <div class="card stats-card" id="stats-medium"><h4>Easy</h4><div id="stats-medium-content"><div class="stat-row"><span class="label">Ch&#432;a có d&#7919; li&#7879;u</span></div></div></div>
+          <div class="card stats-card" id="stats-hard"><h4>Medium</h4><div id="stats-hard-content"><div class="stat-row"><span class="label">Ch&#432;a có d&#7919; li&#7879;u</span></div></div></div>
+          <div class="card stats-card" id="stats-expert"><h4>Hard</h4><div id="stats-expert-content"><div class="stat-row"><span class="label">Ch&#432;a có d&#7919; li&#7879;u</span></div></div></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" id="btnExportHistory" style="font-size:13px;">&#128230; Xu&#7845;t l&#7883;ch s&#7917;</button></div>
+    </div>
+
+    <!-- ===== GAME SCREEN ===== -->
+    <div id="screen-game" class="screen">
+      <div class="game-header">
+        <button class="btn btn-ghost" id="btnQuit">&larr; Thoát</button>
+        <span class="header-title">Ch&#417;i v&#7899;i An Nhi&#234;n</span>
+        <span class="difficulty-badge" id="gameDiffBadge">Medium</span>
+      </div>
+
+      <div id="shakeScreen" class="shake-screen" style="display:none;">
+        <div style="font-size:15px;color:var(--text-secondary);margin-bottom:8px;">L&#7855;c xúc x&#7855;c!</div>
+        <div class="dice-cup" id="diceCup"></div>
+        <div class="shake-hint" id="shakeHint">Ch&#7841;m &#273;&#7875; l&#7855;c</div>
+        <div class="dice-reveal-row" id="shakeRevealDice"></div>
+        <button class="btn btn-primary" id="btnStartBidding" style="display:none;margin-top:24px;">B&#7855;t &#273;&#7847;u</button>
+      </div>
+
+      <div id="gameContent">
+      <div class="dice-area">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
+          <div class="ai-avatar ai-avatar-sm"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
+          <span class="label" style="margin-bottom:0;color:#f48fb1;">An Nhi&#234;n</span>
+        </div>
+        <div class="dice-row" id="aiDice"></div>
+      </div>
+      <div id="aiSpeech" style="display:none;"></div>
+      <div id="lastBidDisplay" class="last-bid-display"></div>
+      <div id="aiThinking" style="display:none;">
+        <div class="ai-thinking-wrap">
+          <div class="ai-avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
+          <div class="ai-thinking-bubble">
+            <div class="typing-dots"><span></span><span></span><span></span></div>
+            <span>&#273;ang ngh&#297;...</span>
+          </div>
+        </div>
+      </div>
+      <hr class="area-divider">
+      <div class="dice-area">
+        <div class="dice-row" id="playerDice"></div>
+      </div>
+      </div>
+      <div class="card bid-controls" id="bidControls">
+        <div class="wheel-picker-container">
+          <div>
+            <div class="wheel-label">S&#7889; l&#432;&#7907;ng</div>
+            <div class="wheel-arrow" onclick="wheelScrollUp('wheelQuantity')">&#9650;</div>
+            <div class="wheel-picker">
+              <div class="wheel-picker-mask-top"></div>
+              <div class="wheel-picker-mask-bottom"></div>
+              <div class="wheel-picker-highlight"></div>
+              <div class="wheel-picker-scroll" id="wheelQuantity">
+                <div class="wheel-picker-item" data-value="">&nbsp;</div>
+                <div class="wheel-picker-item" data-value="">&nbsp;</div>
+              </div>
+            </div>
+            <div class="wheel-arrow" onclick="wheelScrollDown('wheelQuantity')">&#9660;</div>
+          </div>
+          <div>
+            <div class="wheel-label">M&#7863;t s&#7889;</div>
+            <div class="wheel-arrow" onclick="wheelScrollUp('wheelFace')">&#9650;</div>
+            <div class="wheel-picker">
+              <div class="wheel-picker-mask-top"></div>
+              <div class="wheel-picker-mask-bottom"></div>
+              <div class="wheel-picker-highlight"></div>
+              <div class="wheel-picker-scroll" id="wheelFace">
+                <div class="wheel-picker-item" data-value="">&nbsp;</div>
+                <div class="wheel-picker-item" data-value="2">2</div>
+                <div class="wheel-picker-item" data-value="3">3</div>
+                <div class="wheel-picker-item" data-value="4">4</div>
+                <div class="wheel-picker-item" data-value="5">5</div>
+                <div class="wheel-picker-item" data-value="6">6</div>
+                <div class="wheel-picker-item" data-value="">&nbsp;</div>
+              </div>
+            </div>
+            <div class="wheel-arrow" onclick="wheelScrollDown('wheelFace')">&#9660;</div>
+          </div>
+        </div>
+        <div class="chay-toggle"><input type="checkbox" id="chkChay"><label for="chkChay" class="toggle-track"></label><label for="chkChay">Ch&#417;i chay (không tính s&#7889; 1 wild)</label></div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="btnBid">&#272;oán</button>
+          <button class="btn btn-danger" id="btnLiar" disabled>G&#7885;i Liar!</button>
+        </div>
+      </div>
+      <div class="card coach-panel" id="coachPanel">
+        <div class="coach-header">
+          <span class="rating-icon" id="coachIcon"></span>
+          <span class="rating-text" id="coachRating"></span>
+          <span class="probability" id="coachProb"></span>
+        </div>
+        <div class="coach-body" id="coachBody"></div>
+        <div class="coach-actions">
+          <button class="btn btn-ghost" id="btnRetake">&#272;oán l&#7841;i</button>
+          <button class="btn btn-primary" id="btnConfirm">Gi&#7919; nguyên</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== REVEAL SCREEN ===== -->
+    <div id="screen-reveal" class="screen">
+      <div class="reveal-result">
+        <h2 id="revealTitle"></h2>
+        <div class="reveal-summary" id="revealSummary"></div>
+        <div class="dice-area" style="margin-bottom:8px;">
+          <div class="label" style="font-size:12px;">An Nhi&#234;n</div>
+          <div class="dice-row" id="revealAiDice" style="gap:6px;"></div>
+        </div>
+        <div class="dice-area" style="margin-bottom:12px;">
+          <div class="label" style="font-size:12px;">B&#7841;n</div>
+          <div class="dice-row" id="revealPlayerDice" style="gap:6px;"></div>
+        </div>
+        <div id="revealAiSpeech" style="display:none;margin:12px 0;"></div>
+        <div class="reveal-buttons">
+          <button class="btn btn-primary" id="btnShowAnalysis">Xem phân tích</button>
+          <button class="btn btn-ghost" id="btnPlayAgainReveal">Ch&#417;i l&#7841;i</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ANALYSIS SCREEN ===== -->
+    <div id="screen-analysis" class="screen">
+      <div class="analysis-tabs">
+        <button class="analysis-tab active" data-tab="result">K&#7871;t qu&#7843;</button>
+        <button class="analysis-tab" data-tab="turns">Phân tích t&#7915;ng l&#432;&#7907;t</button>
+        <button class="analysis-tab" data-tab="lessons">Bài h&#7885;c</button>
+      </div>
+      <div id="tab-result" class="analysis-content active"><div class="report-grid" id="reportGrid"></div></div>
+      <div id="tab-turns" class="analysis-content"><div class="turn-timeline" id="turnTimeline"></div></div>
+      <div id="tab-lessons" class="analysis-content"><div id="lessonsContent"><div class="ai-thinking"><div class="spinner"></div><span>&#272;ang phân tích v&#7899;i Gemini...</span></div></div></div>
+      <div style="display:flex;gap:12px;margin-top:24px;">
+        <button class="btn btn-primary" id="btnPlayAgain">Ch&#417;i l&#7841;i</button>
+        <button class="btn btn-ghost" id="btnGoHome">V&#7873; trang chính</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ── Service Worker ──────────────────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  }
+
+  // ── PWA Install Logic ────────────────────────────────────────────────────────
+  (function() {
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isStandalone = window.navigator.standalone === true ||
+      window.matchMedia('(display-mode: standalone)').matches;
+    var dismissed = sessionStorage.getItem('pwa-dismissed');
+
+    if (isStandalone || dismissed) return;
+
+    var banner = document.getElementById('pwa-banner');
+    var iosModal = document.getElementById('ios-modal');
+
+    if (isIOS) {
+      // iOS: show banner with button → open instruction modal
+      banner.classList.add('show');
+      document.getElementById('pwa-install-btn').addEventListener('click', function() {
+        iosModal.classList.add('show');
+      });
+      document.getElementById('ios-modal-close').addEventListener('click', function() {
+        iosModal.classList.remove('show');
+      });
+      iosModal.addEventListener('click', function(e) {
+        if (e.target === iosModal) iosModal.classList.remove('show');
+      });
+    } else {
+      // Android/Chrome: use beforeinstallprompt
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        banner.classList.add('show');
+      });
+      document.getElementById('pwa-install-btn').addEventListener('click', function() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() {
+          deferredPrompt = null;
+          banner.classList.remove('show');
+        });
+      });
+      window.addEventListener('appinstalled', function() {
+        banner.classList.remove('show');
+      });
+    }
+
+    document.getElementById('pwa-dismiss').addEventListener('click', function() {
+      banner.classList.remove('show');
+      sessionStorage.setItem('pwa-dismissed', '1');
+    });
+  })();
+
+  var DB_NAME = 'superliar';
+  var DB_VERSION = 1;
+
+  function openDB() {
+    return new Promise(function(resolve, reject) {
+      var request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains('games')) db.createObjectStore('games', { keyPath: 'id', autoIncrement: true });
+        if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+      };
+      request.onsuccess = function(e) { resolve(e.target.result); };
+      request.onerror = function(e) { reject(e.target.error); };
+    });
+  }
+
+  function saveGameToDB(gameData) {
+    return openDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction(['games', 'meta'], 'readwrite');
+        tx.objectStore('games').add(gameData);
+        tx.objectStore('meta').put({ key: 'gameCounter', value: gameData.gameNumber });
+        tx.oncomplete = function() { resolve(); };
+        tx.onerror = function(e) { reject(e.target.error); };
+      });
+    });
+  }
+
+  function loadGameCounter() {
+    return openDB().then(function(db) {
+      return new Promise(function(resolve) {
+        var tx = db.transaction('meta', 'readonly');
+        var request = tx.objectStore('meta').get('gameCounter');
+        request.onsuccess = function(e) { resolve(e.target.result ? e.target.result.value : 0); };
+        request.onerror = function() { resolve(0); };
+      });
+    });
+  }
+
+  function getAllGames() {
+    return openDB().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        var tx = db.transaction('games', 'readonly');
+        var request = tx.objectStore('games').getAll();
+        request.onsuccess = function(e) { resolve(e.target.result || []); };
+        request.onerror = function(e) { reject(e.target.error); };
+      });
+    });
+  }
+
+  function generateGameMarkdown(g, result, report, gameNumber) {
+    var now = new Date();
+    var dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+    var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+    var md = '# Van #' + gameNumber + ' \u2014 ' + dateStr + ' ' + timeStr + '\n';
+    md += '- Cap do: ' + diffLabels[g.difficulty] + '\n';
+    md += '- Ket qua: **' + (report.result === 'win' ? 'Thang' : 'Thua') + '**\n';
+    md += '- Accuracy: ' + (report.accuracyRate * 100).toFixed(0) + '% (' + report.correctBids + '/' + report.myBids + ' nuoc di tot)\n';
+    if (report.liarCallsTotal > 0) md += '- Liar calls: ' + report.liarCallsCorrect + '/' + report.liarCallsTotal + ' dung\n';
+    md += '- Doan lai: ' + report.retakes + ' lan\n\n';
+    md += '## Dien bien\n| Luot | Nguoi | Doan | Chay | Xac suat | Danh gia |\n|------|-------|------|------|----------|----------|\n';
+    for (var i = 0; i < g.history.length; i++) {
+      var h = g.history[i];
+      var action = h.action === 'liar' ? 'LIAR!' : (h.bid.quantity + ' con so ' + h.bid.faceValue);
+      var chay = h.action === 'bid' ? (h.bid.isChay ? 'Co' : 'Khong') : '\u2014';
+      var prob = h.probability !== undefined ? (h.probability * 100).toFixed(0) + '%' : '\u2014';
+      var verdict = '\u2014';
+      if (h.player === 'B\u1ea1n' && h.probability !== undefined) {
+        if (h.probability >= 0.7) verdict = 'Tuyet'; else if (h.probability >= 0.5) verdict = 'Tot';
+        else if (h.probability >= 0.3) verdict = 'Rui ro'; else verdict = 'Te';
+      }
+      var retakeNote = h.retakes > 0 ? ' (retry ' + h.retakes + ')' : '';
+      md += '| ' + h.turn + ' | ' + h.player + ' | ' + action + retakeNote + ' | ' + chay + ' | ' + prob + ' | ' + verdict + ' |\n';
+    }
+    md += '\n## Xuc xac\n- Ban: [' + g.players[0].dice.join('] [') + ']\n- An Nhien: [' + g.players[1].dice.join('] [') + ']\n';
+    var lastBid = result.lastBid;
+    md += '- Tong so ' + lastBid.faceValue + (lastBid.isChay ? ' (chay)' : ' (co wild)') + ': ' + result.actualCount + ' con -> Loi doan "' + lastBid.quantity + ' con so ' + lastBid.faceValue + '" ' + (result.bidCorrect ? 'DUNG' : 'SAI') + '\n';
+    if (g.deepAnalysis) {
+      var a = g.deepAnalysis;
+      md += '\n## Phan tich AI\n';
+      if (a.summary) md += a.summary + '\n\n';
+      if (a.keyMistakes && a.keyMistakes.length > 0) {
+        md += '### Sai lam chinh\n';
+        for (var mi = 0; mi < a.keyMistakes.length; mi++) {
+          var m = a.keyMistakes[mi];
+          md += '- **Luot ' + m.turn + ':** ' + m.whatYouDid + ' -> Nen: ' + m.whatShouldDo + '. ' + m.whyItMatters + '\n';
+        }
+        md += '\n';
+      }
+      if (a.goodDecisions && a.goodDecisions.length > 0) {
+        md += '### Quyet dinh hay\n';
+        for (var gi = 0; gi < a.goodDecisions.length; gi++) {
+          var gd = a.goodDecisions[gi];
+          md += '- **Luot ' + gd.turn + ':** ' + gd.whatYouDid + ' -- ' + gd.whyItWasGood + '\n';
+        }
+        md += '\n';
+      }
+      if (a.patterns) md += '### Xu huong\n' + a.patterns + '\n\n';
+      if (a.lessonLearned) md += '## Bai hoc\n' + a.lessonLearned + '\n\n';
+      if (a.actionableTip) md += '## Tip\n' + a.actionableTip + '\n';
+    }
+    return md;
+  }
+
+  function generateStatsMd() {
+    var s = state.stats; var now = new Date();
+    var md = '# SuperLiar Dice -- Thong ke\n\nCap nhat: ' + now.toLocaleString('vi-VN') + '\n\n';
+    md += '## Tong quan\n- Tong van: ' + s.overall.totalGames + '\n- Thang: ' + s.overall.totalWins + ' (' + (s.overall.winRate * 100).toFixed(0) + '%)\n\n';
+    var diffs = ['medium', 'hard', 'expert'];
+    for (var i = 0; i < diffs.length; i++) {
+      var diff = diffs[i], d = s.byDifficulty[diff];
+      if (d.games === 0) continue;
+      var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+      md += '## ' + diffLabels[diff] + '\n';
+      md += '- Van: ' + d.games + ' | Thang: ' + (d.winRate * 100).toFixed(0) + '% (' + d.wins + '/' + d.games + ')\n';
+      md += '- Streak: ' + (d.currentStreak > 0 ? d.currentStreak + 'W' : d.currentStreak < 0 ? Math.abs(d.currentStreak) + 'L' : '0') + ' | Best: ' + d.bestStreak + 'W\n';
+      md += '- Accuracy: ' + (d.avgAccuracy * 100).toFixed(0) + '% | Liar dung: ' + (d.avgLiarCorrect * 100).toFixed(0) + '%\n';
+      md += '- 10 van gan nhat: ' + d.last10.join(' ') + ' (' + (d.last10WinRate * 100).toFixed(0) + '%)\n\n';
+    }
+    return md;
+  }
+
+  async function exportHistoryAsMd() {
+    try {
+      var games = await getAllGames();
+      if (games.length === 0) { alert('Ch\u01B0a có l\u1ECBch s\u1EED ván \u0111\u1EA5u nào.'); return; }
+      var combined = '';
+      for (var i = 0; i < games.length; i++) combined += games[i].markdown + '\n\n---\n\n';
+      combined += generateStatsMd();
+      var fileName = 'superliar-history.md';
+      if (navigator.share && navigator.canShare) {
+        var file = new File([combined], fileName, { type: 'text/markdown' });
+        var shareData = { files: [file], title: 'SuperLiar Dice History' };
+        if (navigator.canShare(shareData)) { try { await navigator.share(shareData); return; } catch (shareErr) { if (shareErr.name === 'AbortError') return; } }
+      }
+      var blob2 = new Blob([combined], { type: 'text/markdown' });
+      var url = URL.createObjectURL(blob2);
+      var a = document.createElement('a'); a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    } catch (err) { console.error('Export failed:', err); alert('L\u1ED7i xu\u1EA5t l\u1ECBch s\u1EED: ' + err.message); }
+  }
+
+  function rollDice(count) { if (count === undefined) count = 5; return Array.from({ length: count }, function() { return Math.floor(Math.random() * 6) + 1; }); }
+
+  function countDice(allDice, faceValue, isChay) {
+    var count = 0;
+    for (var i = 0; i < allDice.length; i++) { if (allDice[i] === faceValue) count++; else if (!isChay && allDice[i] === 1) count++; }
+    return count;
+  }
+
+  function isValidBid(newBid, currentBid) {
+    if (!newBid || newBid.faceValue < 2 || newBid.faceValue > 6 || newBid.quantity < 3) return false;
+    if (!currentBid) return true;
+    // Switching to chay: quantity must be at least half of current (rounded up), minimum 1
+    if (newBid.isChay && !currentBid.isChay) {
+      return newBid.quantity >= Math.max(3, Math.ceil(currentBid.quantity / 2));
+    }
+    // Chay to chay: must double quantity
+    if (newBid.isChay && currentBid.isChay) return newBid.quantity >= currentBid.quantity * 2;
+    // Normal: raise quantity OR keep quantity + raise face
+    if (newBid.quantity > currentBid.quantity) return true;
+    if (newBid.quantity === currentBid.quantity && newBid.faceValue > currentBid.faceValue) return true;
+    return false;
+  }
+
+  function resolveLiar(gameState) {
+    var lastBid = gameState.currentBid;
+    var callerIndex = gameState.currentPlayerIndex;
+    var bidderIndex = callerIndex === 0 ? 1 : 0;
+    var allDice = gameState.players[0].dice.concat(gameState.players[1].dice);
+    var actualCount = countDice(allDice, lastBid.faceValue, lastBid.isChay);
+    var bidCorrect = actualCount >= lastBid.quantity;
+    return { lastBid: lastBid, actualCount: actualCount, bidCorrect: bidCorrect, loserIndex: bidCorrect ? callerIndex : bidderIndex, winnerIndex: bidCorrect ? bidderIndex : callerIndex, allDice: allDice };
+  }
+
+  function comb(n, k) { if (k > n) return 0; if (k === 0 || k === n) return 1; var r = 1; for (var i = 0; i < k; i++) r = r * (n - i) / (i + 1); return r; }
+
+  function binomialProbability(n, k, p) {
+    if (k > n) return 0; if (k <= 0) return 1;
+    var prob = 0; for (var i = k; i <= n; i++) prob += comb(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i); return prob;
+  }
+
+  function calculateProbability(myDice, bid, totalDiceOnTable, isChay) {
+    var p = isChay ? (1/6) : (2/6);
+    var myCount = countDice(myDice, bid.faceValue, isChay);
+    return binomialProbability(totalDiceOnTable - myDice.length, Math.max(0, bid.quantity - myCount), p);
+  }
+
+  var AVATAR_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E";
+  var state = { game: null, selectedDifficulty: 'hard', stats: loadStats(), gameCounter: 0 };
+  loadGameCounter().then(function(c) { state.gameCounter = c; }).catch(function() { state.gameCounter = 0; });
+
+  function loadStats() { var s = localStorage.getItem('superliar_stats'); if (s) { try { return JSON.parse(s); } catch(e) { return createEmptyStats(); } } return createEmptyStats(); }
+  function createEmptyStats() { return { overall: { totalGames: 0, totalWins: 0, winRate: 0 }, byDifficulty: { medium: emptyDiffStats(), hard: emptyDiffStats(), expert: emptyDiffStats() } }; }
+  function emptyDiffStats() { return { games: 0, wins: 0, losses: 0, winRate: 0, currentStreak: 0, bestStreak: 0, avgAccuracy: 0, avgLiarCorrect: 0, avgRetakeRate: 0, mostBluffedFace: 2, last10: [], last10WinRate: 0, trendDirection: '->', _accuracyHistory: [], _liarHistory: [], _retakeHistory: [], _bluffFaces: {} }; }
+  function saveStats() { localStorage.setItem('superliar_stats', JSON.stringify(state.stats)); }
+
+  function showScreen(screenId) { var screens = document.querySelectorAll('.screen'); for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active'); document.getElementById(screenId).classList.add('active'); }
+  function getApiKey() { return localStorage.getItem('superliar_apikey') || document.getElementById('apiKeyInput').value.trim() || ''; }
+
+  // ==================== SVG DICE ====================
+  function renderDie(value, extraClass) {
+    var dotColor = (value === 1) ? '#e53935' : '#1a1d27';
+    var cls = 'die-svg ' + (extraClass || '');
+    var dots = { 1:[[50,50]], 2:[[30,30],[70,70]], 3:[[30,30],[50,50],[70,70]], 4:[[30,30],[70,30],[30,70],[70,70]], 5:[[30,30],[70,30],[50,50],[30,70],[70,70]], 6:[[30,30],[70,30],[30,50],[70,50],[30,70],[70,70]] };
+    var dotsSvg = '', positions = dots[value] || [], r = value === 1 ? 10 : 8;
+    for (var i = 0; i < positions.length; i++) dotsSvg += '<circle cx="' + positions[i][0] + '" cy="' + positions[i][1] + '" r="' + r + '" fill="' + dotColor + '"/>';
+    return '<div class="' + cls + '"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" rx="18" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>' + dotsSvg + '</svg></div>';
+  }
+
+  function updateLastBidDisplay() {
+    var el = document.getElementById('lastBidDisplay'); var g = state.game;
+    if (!g || !g.currentBid) { el.textContent = 'Ch\u01B0a có l\u1EDDi \u0111oán \u2014 b\u1EA1n \u0111i tr\u01B0\u1EDBc!'; return; }
+    var lastEntry = null;
+    for (var i = g.history.length - 1; i >= 0; i--) { if (g.history[i].action === 'bid') { lastEntry = g.history[i]; break; } }
+    if (lastEntry) el.textContent = lastEntry.player + ': ' + lastEntry.bid.quantity + ' con s\u1ED1 ' + lastEntry.bid.faceValue + (lastEntry.bid.isChay ? ' (chay)' : '');
+  }
+
+  // ==================== WHEEL PICKER ====================
+  function initWheelPicker(scrollEl, onChange) {
+    function updateSelected() {
+      var items = scrollEl.querySelectorAll('.wheel-picker-item');
+      var centerIdx = Math.round(scrollEl.scrollTop / 40) + 1; // +1 for top spacer
+      for (var i = 0; i < items.length; i++) {
+        var isCenter = (i === centerIdx);
+        items[i].classList.toggle('selected', isCenter);
+      }
+      if (onChange) onChange();
+    }
+    // Remove old listener if re-initializing
+    scrollEl._wheelHandler = updateSelected;
+    scrollEl.removeEventListener('scroll', scrollEl._prevHandler);
+    scrollEl.addEventListener('scroll', updateSelected);
+    scrollEl._prevHandler = updateSelected;
+    updateSelected();
+  }
+
+  function getWheelValue(scrollEl) {
+    var items = scrollEl.querySelectorAll('.wheel-picker-item');
+    var centerIdx = Math.round(scrollEl.scrollTop / 40) + 1;
+    if (centerIdx >= 0 && centerIdx < items.length) {
+      var val = parseInt(items[centerIdx].dataset.value);
+      return isNaN(val) ? null : val;
+    }
+    return null;
+  }
+
+  // ==================== SHAKE SCREEN ====================
+  var shakeState = 0; // 0=waiting, 1=shaking, 2=revealed
+
+  function showShakeScreen() {
+    shakeState = 0;
+    document.getElementById('shakeScreen').style.display = 'flex';
+    document.getElementById('bidControls').style.display = 'none';
+    document.getElementById('gameContent').style.display = 'none';
+    document.getElementById('shakeHint').textContent = 'Ch\u1EA1m \u0111\u1EC3 l\u1EAFc';
+    document.getElementById('shakeRevealDice').classList.remove('visible');
+    document.getElementById('shakeRevealDice').innerHTML = '';
+    document.getElementById('btnStartBidding').style.display = 'none';
+    var cup = document.getElementById('diceCup');
+    cup.classList.remove('shaking', 'revealed');
+  }
+
+  function handleCupTap() {
+    if (shakeState === 0) {
+      shakeState = 1;
+      var cup = document.getElementById('diceCup');
+      cup.classList.add('shaking');
+      document.getElementById('shakeHint').textContent = '\u0110ang l\u1EAFc...';
+      setTimeout(function() {
+        cup.classList.remove('shaking');
+        cup.classList.add('revealed');
+        shakeState = 2;
+        document.getElementById('shakeHint').textContent = 'Xúc x\u1EAFc c\u1EE7a b\u1EA1n:';
+        var revealRow = document.getElementById('shakeRevealDice');
+        var html = '';
+        for (var i = 0; i < state.game.players[0].dice.length; i++) {
+          html += renderDie(state.game.players[0].dice[i], state.game.players[0].dice[i] === 1 ? 'die-wild-glow' : '');
+        }
+        revealRow.innerHTML = html;
+        setTimeout(function() { revealRow.classList.add('visible'); }, 50);
+        document.getElementById('btnStartBidding').style.display = 'inline-block';
+      }, 600);
+    }
+  }
+
+  function handleStartBidding() {
+    document.getElementById('shakeScreen').style.display = 'none';
+    document.getElementById('gameContent').style.display = 'block';
+    renderGameScreen();
+    if (state.game.currentPlayerIndex === 1) {
+      document.getElementById('bidControls').style.display = 'none';
+      doAiTurn();
+    }
+  }
+
+  function renderGameScreen() {
+    var g = state.game;
+    var badgeEl = document.getElementById('gameDiffBadge');
+    var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+    badgeEl.textContent = diffLabels[g.difficulty];
+    badgeEl.className = 'difficulty-badge badge-' + g.difficulty;
+    var aiDiceHtml = '';
+    for (var i = 0; i < g.players[1].dice.length; i++) aiDiceHtml += '<div class="die-hidden-new">?</div>';
+    document.getElementById('aiDice').innerHTML = aiDiceHtml;
+    renderPlayerDice(g.players[0].dice);
+    updateLastBidDisplay();
+    populateQuantitySelector();
+    document.getElementById('btnLiar').disabled = !g.currentBid;
+    document.getElementById('coachPanel').classList.remove('visible');
+    document.getElementById('aiThinking').style.display = 'none';
+    // Init face wheel picker (quantity is init'd in populateQuantitySelector)
+    initWheelPicker(document.getElementById('wheelFace'));
+    // Reset face wheel to first value (2)
+    document.getElementById('wheelFace').scrollTop = 0;
+    if (g.currentPlayerIndex === 0 && g.phase === 'bidding') document.getElementById('bidControls').style.display = 'block';
+    else document.getElementById('bidControls').style.display = 'none';
+    document.getElementById('chkChay').checked = false;
+  }
+
+  function renderPlayerDice(dice) {
+    var html = '';
+    for (var i = 0; i < dice.length; i++) html += renderDie(dice[i], dice[i] === 1 ? 'die-wild-glow' : '');
+    document.getElementById('playerDice').innerHTML = html;
+  }
+
+  function populateQuantitySelector() {
+    var scroll = document.getElementById('wheelQuantity');
+    var totalDice = 0;
+    for (var i = 0; i < state.game.players.length; i++) totalDice += state.game.players[i].dice.length;
+    var html = '<div class="wheel-picker-item" data-value="">&nbsp;</div>';
+    for (var q = 3; q <= totalDice; q++) {
+      html += '<div class="wheel-picker-item" data-value="' + q + '">' + q + '</div>';
+    }
+    html += '<div class="wheel-picker-item" data-value="">&nbsp;</div>';
+    scroll.innerHTML = html;
+    var startQty = Math.max(state.game.currentBid ? state.game.currentBid.quantity : 3, 3);
+    scroll.scrollTop = (startQty - 3) * 40;
+    initWheelPicker(scroll);
+  }
+
+  function wheelScrollUp(wheelId) { document.getElementById(wheelId).scrollBy({top: -40, behavior: 'smooth'}); }
+  function wheelScrollDown(wheelId) { document.getElementById(wheelId).scrollBy({top: 40, behavior: 'smooth'}); }
+
+  var pendingAction = null;
+
+  function handlePlayerBid() {
+    var g = state.game; if (g.currentPlayerIndex !== 0 || g.phase !== 'bidding') return;
+    var quantity = getWheelValue(document.getElementById('wheelQuantity'));
+    var faceValue = getWheelValue(document.getElementById('wheelFace'));
+    if (!quantity || !faceValue) { alert('Ch\u01B0a ch\u1ECDn \u0111\u1EE7 s\u1ED1 l\u01B0\u1EE3ng và m\u1EB7t s\u1ED1!'); return; }
+    var isChay = document.getElementById('chkChay').checked;
+    var newBid = { quantity: quantity, faceValue: faceValue, isChay: isChay };
+    if (!isValidBid(newBid, g.currentBid)) {
+      alert('L\u1EDDi \u0111oán không h\u1EE3p l\u1EC7! Ph\u1EA3i m\u1EA1nh h\u01A1n l\u1EDDi \u0111oán tr\u01B0\u1EDBc.' + (g.currentBid && g.currentBid.isChay && isChay ? '\nCh\u01A1i chay ti\u1EBFp ph\u1EA3i g\u1EA5p \u0111ôi s\u1ED1 l\u01B0\u1EE3ng (' + (g.currentBid.quantity * 2) + ' tr\u1EDF lên).' : ''));
+      return;
+    }
+    var allDiceCount = 0; for (var i = 0; i < g.players.length; i++) allDiceCount += g.players[i].dice.length;
+    var probability = calculateProbability(g.players[0].dice, newBid, allDiceCount, isChay);
+    pendingAction = { action: 'bid', bid: newBid, probability: probability };
+    document.getElementById('bidControls').style.display = 'none';
+    showCoachFeedback(pendingAction);
+  }
+
+  function handlePlayerLiar() {
+    var g = state.game; if (g.currentPlayerIndex !== 0 || !g.currentBid || g.phase !== 'bidding') return;
+    var allDiceCount = 0; for (var i = 0; i < g.players.length; i++) allDiceCount += g.players[i].dice.length;
+    var probability = calculateProbability(g.players[0].dice, g.currentBid, allDiceCount, g.currentBid.isChay);
+    pendingAction = { action: 'liar', bid: null, probability: 1 - probability };
+    document.getElementById('bidControls').style.display = 'none';
+    showCoachFeedback(pendingAction);
+  }
+
+  function handleRetake() {
+    state.game.retakesThisTurn = (state.game.retakesThisTurn || 0) + 1;
+    pendingAction = null;
+    document.getElementById('coachPanel').classList.remove('visible');
+    document.getElementById('bidControls').style.display = 'block';
+  }
+
+  async function handleConfirm() {
+    var g = state.game; var action = pendingAction; if (!action) return;
+    g.history.push({ turn: ++g.turnCounter, player: 'B\u1EA1n', action: action.action, bid: action.bid, coachFeedback: action.coachFeedback || null, retakes: g.retakesThisTurn || 0, probability: action.probability });
+    g.retakesThisTurn = 0;
+    document.getElementById('coachPanel').classList.remove('visible');
+    if (action.action === 'liar') { doReveal(); return; }
+    g.currentBid = action.bid; g.currentPlayerIndex = 1; pendingAction = null;
+    updateLastBidDisplay();
+    await doAiTurn();
+  }
+
+  async function callGemini(prompt, model) {
+    if (!model) model = 'gemini-3.1-pro-preview';
+    var apiKey = getApiKey(); if (!apiKey) throw new Error('No API key');
+    var response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } })
+    });
+    if (!response.ok) { var err = await response.text(); throw new Error('Gemini API error: ' + response.status + ' - ' + err); }
+    var data = await response.json();
+    var text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!text) throw new Error('Empty Gemini response');
+    // Clean up common Gemini JSON issues
+    text = text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' '); // strip control chars
+    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, ''); // strip markdown fences
+    try { return JSON.parse(text); } catch (e1) {
+      var jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        var cleaned = jsonMatch[0];
+        // Fix common issues: trailing commas before } or ]
+        cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+        // Fix unescaped newlines inside strings (replace literal newlines with spaces)
+        cleaned = cleaned.replace(/\n/g, ' ');
+        try { return JSON.parse(cleaned); } catch (e2) {
+          // Last resort: try to fix unterminated strings by closing them
+          cleaned = cleaned.replace(/"([^"]*?)(\n|$)/g, function(match, p1, p2) {
+            if (p1.endsWith('\\')) return match;
+            return '"' + p1 + '"' + p2;
+          });
+          cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+          try { return JSON.parse(cleaned); } catch (e3) {
+            throw new Error('Failed to parse JSON from Gemini response');
+          }
+        }
+      }
+      throw new Error('No valid JSON found in Gemini response');
+    }
+  }
+
+  async function doAiTurn() {
+    var g = state.game;
+    document.getElementById('aiThinking').style.display = 'flex';
+    document.getElementById('bidControls').style.display = 'none';
+    await new Promise(function(r) { setTimeout(r, 800 + Math.random() * 700); });
+    var decision;
+    try {
+      if (g.difficulty === 'medium') decision = aiMedium(g);
+      else if (g.difficulty === 'hard') decision = await aiHard(g);
+      else decision = await aiExpert(g);
+    } catch (err) { console.error('AI error, falling back to medium:', err); decision = aiMedium(g); }
+    document.getElementById('aiThinking').style.display = 'none';
+    g.history.push({ turn: ++g.turnCounter, player: 'An Nhi\u00EAn', action: decision.action, bid: decision.bid, reasoning: decision.reasoning, retakes: 0, aiAnalysis: decision.aiAnalysis || null });
+
+    // Speech text — reasoning already contains bid info for local AI, Gemini may not
+    var speechText = '';
+    if (decision.action === 'liar') {
+      speechText = (decision.reasoning || 'Em kh\u00F4ng tin \u0111\u00E2u! LIAR!');
+    } else {
+      var bidLabel = decision.bid.quantity + ' con s\u1ED1 ' + decision.bid.faceValue + (decision.bid.isChay ? ' chay' : '');
+      var reasoning = decision.reasoning || '';
+      // Check if reasoning already contains the bid numbers (local AI does this)
+      if (reasoning && (reasoning.indexOf(bidLabel) !== -1 || (reasoning.indexOf(String(decision.bid.quantity) + ' con') !== -1 && reasoning.indexOf('s\u1ED1 ' + decision.bid.faceValue) !== -1))) {
+        speechText = reasoning;
+      } else if (reasoning) {
+        speechText = bidLabel + '! ' + reasoning;
+      } else {
+        speechText = 'Em \u0111o\u00E1n ' + bidLabel + ' nha~';
+      }
+    }
+
+    var speechDiv = document.getElementById('aiSpeech');
+    speechDiv.innerHTML = '<div class="ai-speech-wrap"><div class="ai-avatar"><img src="' + AVATAR_SVG + '" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div><div class="ai-speech">' + speechText + '</div></div>';
+    speechDiv.style.display = 'block';
+
+    if (decision.action === 'liar') {
+      state._lastAiSpeech = speechText;
+      await new Promise(function(r) { setTimeout(r, 4000); });
+      speechDiv.style.display = 'none';
+      doReveal();
+      return;
+    }
+
+    g.currentBid = decision.bid; g.currentPlayerIndex = 0;
+    await new Promise(function(r) { setTimeout(r, 1500); });
+    // Don't hide speech - keep it visible for player to read
+    renderGameScreen();
+  }
+
+  function aiMedium(g) {
+    var aiDice = g.players[1].dice, totalDice = g.players[0].dice.length + g.players[1].dice.length, currentBid = g.currentBid;
+    var faceCounts = {};
+    for (var i = 0; i < aiDice.length; i++) { var d = aiDice[i]; if (d >= 2) faceCounts[d] = (faceCounts[d] || 0) + 1; }
+    var wilds = aiDice.filter(function(d) { return d === 1; }).length;
+
+    // Build dice summary for analysis
+    var diceInfo = [];
+    for (var fi = 2; fi <= 6; fi++) { if (faceCounts[fi]) diceInfo.push(faceCounts[fi] + ' con s\u1ED1 ' + fi); }
+    if (wilds > 0) diceInfo.push(wilds + ' wild (s\u1ED1 1)');
+    var diceSummary = diceInfo.join(', ');
+
+    // Liar check with noise
+    if (currentBid) {
+      var prob = calculateProbability(aiDice, currentBid, totalDice, currentBid.isChay);
+      var noisyProb = prob + (Math.random() * 0.16 - 0.08);
+      if (noisyProb < 0.35) {
+        var liarPhrases = ['e h\u00F4ng tin \u0111\u00E2u! LIAR lun \uD83D\uDD25', 'a \u0111ang bluff ph\u1EA3i h\u00F4ng? LIAR nha hihi', 'thui h\u00F4ng \u0111\u1EE3i \u0111c r, e g\u1ECDi liar lun!', '\u0111o\u00E1n cao v\u1EADy ai tin~ liar nha a \uD83D\uDE1D', 'd\u1EA1 e h\u00F4ng d\u00E1m theo \u0111\u00E2u a, LIAR! \uD83E\uDE77'];
+        var aiCount = countDice(aiDice, currentBid.faceValue, currentBid.isChay);
+        var needed = currentBid.quantity - aiCount;
+        return { action: 'liar', bid: null, reasoning: liarPhrases[Math.floor(Math.random() * liarPhrases.length)], aiAnalysis: { strategy: 'liar', probability: prob, diceSummary: diceSummary, thinking: 'An Nhi\u00EAn ch\u1EC9 c\u00F3 ' + aiCount + ' con s\u1ED1 ' + currentBid.faceValue + (currentBid.isChay ? '' : ' (k\u1EC3 c\u1EA3 wild)') + ', c\u1EA7n thêm ' + needed + ' con t\u1EEB b\u1EA1n. Xác su\u1EA5t \u0111\u00FAng ch\u1EC9 ' + (prob * 100).toFixed(0) + '% \u2014 quá r\u1EE7i ro nên g\u1ECDi Liar.' } };
+      }
+    }
+
+    // Pick a strategy randomly each turn for variety
+    var strategy = Math.random();
+    var bid, chosenFace, phrase;
+    var turnNumber = g.history.length;
+
+    // Sort faces by strength (count + wilds)
+    var facesByStrength = [];
+    for (var f = 2; f <= 6; f++) facesByStrength.push({ face: f, count: (faceCounts[f] || 0), total: (faceCounts[f] || 0) + wilds });
+    facesByStrength.sort(function(a, b) { return b.total - a.total; });
+    var strongFace = facesByStrength[0].face;
+    var weakFaces = facesByStrength.filter(function(x) { return x.count === 0; }).map(function(x) { return x.face; });
+    if (weakFaces.length === 0) weakFaces = facesByStrength.slice(-2).map(function(x) { return x.face; });
+
+    // Helper to build bid text
+    function bidStr(b) { return b.quantity + ' con s\u1ED1 ' + b.faceValue + (b.isChay ? ' chay' : ''); }
+
+    var strategyName, thinking;
+
+    if (!currentBid) {
+      // === OPENING BID — vary strategy ===
+      if (strategy < 0.35) {
+        chosenFace = weakFaces[Math.floor(Math.random() * weakFaces.length)];
+        bid = { quantity: 3, faceValue: chosenFace, isChay: false };
+        var openBluffPhrases = [
+          bidStr(bid) + ' n\u00E8 a~ \u0111i nh\u1EB9 tr\u01B0\u1EDBc nha hihi',
+          'hmm \u0111\u1EC3 e th\u1EED ' + bidStr(bid) + ' xem nha~',
+          bidStr(bid) + '! \u0111ii nh\u1EB9 tr\u01B0\u1EDBc cho \u0111\u1EE1 h\u1ED3i h\u1ED9p kk'
+        ];
+        phrase = openBluffPhrases[Math.floor(Math.random() * openBluffPhrases.length)];
+        strategyName = 'Bluff m\u1EDF \u0111\u1EA7u';
+        thinking = 'Ch\u1ECDn s\u1ED1 ' + chosenFace + ' (s\u1ED1 mình KHÔNG có) \u0111\u1EC3 bluff, \u0111i nh\u1EB9 tr\u01B0\u1EDBc \u0111\u1EC3 che giấu bài thật.';
+      } else if (strategy < 0.65) {
+        var midFaces = facesByStrength.filter(function(x) { return x.count >= 1 && x.count <= 2; });
+        chosenFace = midFaces.length > 0 ? midFaces[Math.floor(Math.random() * midFaces.length)].face : strongFace;
+        bid = { quantity: 3, faceValue: chosenFace, isChay: false };
+        var openMidPhrases = [
+          'd\u1EA1 e \u0111o\u00E1n ' + bidStr(bid) + ' nha a \uD83E\uDE77',
+          bidStr(bid) + '! e c\u00F3 c\u1EA3m gi\u00E1c t\u1ED1t v\u1EC1 s\u1ED1 ' + chosenFace + ' n\u00E8~',
+          bidStr(bid) + ' cho an to\u00E0n nha a hihi'
+        ];
+        phrase = openMidPhrases[Math.floor(Math.random() * openMidPhrases.length)];
+        strategyName = 'An toàn v\u1EEBa ph\u1EA3i';
+        thinking = 'Có ' + (faceCounts[chosenFace] || 0) + ' con s\u1ED1 ' + chosenFace + ' + ' + wilds + ' wild. \u0110\u1EB7t v\u1EEBa ph\u1EA3i, không l\u1ED9 bài m\u1EA1nh.';
+      } else if (strategy < 0.85) {
+        bid = { quantity: 3, faceValue: strongFace, isChay: false };
+        var openConfPhrases = [
+          bidStr(bid) + '! e c\u00F3 linh c\u1EA3m v\u1EC1 s\u1ED1 n\u00E0y lun~ \u2728',
+          'e t\u1EF1 tin \u0111o\u00E1n ' + bidStr(bid) + ' lun nha a!',
+          bidStr(bid) + ' n\u00E8 a! s\u1ED1 ' + strongFace + ' nhiu l\u1EAFm \u0111\u00F3 hihi'
+        ];
+        phrase = openConfPhrases[Math.floor(Math.random() * openConfPhrases.length)];
+        strategyName = 'T\u1EF1 tin m\u1EDF \u0111\u1EA7u';
+        thinking = 'Có ' + facesByStrength[0].total + ' con s\u1ED1 ' + strongFace + ' (g\u1ED3m wild), \u0111ây là s\u1ED1 m\u1EA1nh nhất. \u0110\u1EB7t t\u1EF1 tin \u0111\u1EC3 gây áp l\u1EF1c s\u1EDBm.';
+      } else {
+        if (facesByStrength[0].count >= 3) {
+          bid = { quantity: facesByStrength[0].count, faceValue: strongFace, isChay: true };
+          phrase = bidStr(bid) + '! ch\u01A1i chay lun cho m\u00E1u n\u00E8 a \u{1F525}';
+          strategyName = 'Chay t\u1EEB \u0111\u1EA7u';
+          thinking = 'Có đến ' + facesByStrength[0].count + ' con s\u1ED1 ' + strongFace + ' (không tính wild), đủ m\u1EA1nh \u0111\u1EC3 chay ngay t\u1EEB \u0111\u1EA7u!';
+        } else {
+          chosenFace = 2 + Math.floor(Math.random() * 5);
+          bid = { quantity: 3, faceValue: chosenFace, isChay: false };
+          phrase = bidStr(bid) + '~ b\u1EAFt \u0111\u1EA7u nh\u1EB9 th\u00F4i nha a!';
+          strategyName = 'Ng\u1EABu nhiên nh\u1EB9';
+          thinking = '\u0110i nh\u1EB9 v\u1EDBi s\u1ED1 ngẫu nhiên \u0111\u1EC3 thăm dò \u0111\u1ED1i thủ, chưa l\u1ED9 bài.';
+        }
+      }
+    } else {
+      // === RESPONSE BID — multiple strategies ===
+      var bidProb = currentBid ? calculateProbability(aiDice, currentBid, totalDice, currentBid.isChay) : 1;
+      if (strategy < 0.30) {
+        var minBid = null;
+        for (var mf = currentBid.faceValue + 1; mf <= 6; mf++) {
+          var try1 = { quantity: currentBid.quantity, faceValue: mf, isChay: false };
+          if (isValidBid(try1, currentBid)) { minBid = try1; break; }
+        }
+        if (!minBid) minBid = { quantity: currentBid.quantity + 1, faceValue: 2 + Math.floor(Math.random() * 5), isChay: false };
+        bid = minBid;
+        var minPhrases = [
+          bidStr(bid) + '~ t\u0103ng ch\u00FAt x\u00EDu th\u00F4i kk',
+          'e \u0111ii nh\u1EB9 nha... ' + bidStr(bid) + ' \uD83E\uDE77',
+          bidStr(bid) + '! e h\u00F4ng v\u1ED9i \u0111\u00E2u a~'
+        ];
+        phrase = minPhrases[Math.floor(Math.random() * minPhrases.length)];
+        strategyName = 'T\u0103ng t\u1ED1i thi\u1EC3u';
+        thinking = 'L\u1EDDi \u0111oán trư\u1EDBc có ' + (bidProb * 100).toFixed(0) + '% \u0111úng, chưa c\u1EA7n g\u1ECDi Liar. T\u0103ng nh\u1EB9 nhất có th\u1EC3 \u0111\u1EC3 giữ an toàn.';
+      } else if (strategy < 0.55) {
+        chosenFace = strongFace;
+        var qty = Math.max(facesByStrength[0].total, currentBid.quantity + (chosenFace <= currentBid.faceValue ? 1 : 0));
+        bid = { quantity: qty, faceValue: chosenFace, isChay: false };
+        var strongPhrases = [
+          bidStr(bid) + '! e c\u00F3 nhiu s\u1ED1 ' + chosenFace + ' l\u1EAFm n\u00E8 hihi~',
+          'chuy\u1EC3n qua s\u1ED1 may m\u1EAFn c\u1EE7a e nha! ' + bidStr(bid) + ' \u2728',
+          bidStr(bid) + '~ s\u1ED1 ' + chosenFace + ' l\u00E0 b\u00E0i t\u1EE7 c\u1EE7a e \u0111\u00F3 a!'
+        ];
+        phrase = strongPhrases[Math.floor(Math.random() * strongPhrases.length)];
+        strategyName = 'Chơi bài m\u1EA1nh';
+        thinking = 'Có ' + facesByStrength[0].total + ' con s\u1ED1 ' + chosenFace + ' (g\u1ED3m wild). Chuy\u1EC3n sang s\u1ED1 m\u1EA1nh nh\u1EA5t \u0111\u1EC3 tận d\u1EE5ng bài thật.';
+      } else if (strategy < 0.75) {
+        chosenFace = weakFaces[Math.floor(Math.random() * weakFaces.length)];
+        var bluffQty = currentBid.quantity + (chosenFace <= currentBid.faceValue ? 1 : 0);
+        bid = { quantity: bluffQty, faceValue: chosenFace, isChay: false };
+        var bluffPhrases = [
+          bidStr(bid) + '~ a ch\u1EAFc h\u00F4ng c\u00F3 nhiu s\u1ED1 n\u00E0y \u0111\u00E2u nhi \uD83D\uDE1D',
+          'e \u0111o\u00E1n li\u1EC1u n\u00E8 hihi... ' + bidStr(bid) + '!',
+          bidStr(bid) + '! tin e \u0111ii, s\u1ED1 ' + chosenFace + ' nhiu l\u1EAFm~'
+        ];
+        phrase = bluffPhrases[Math.floor(Math.random() * bluffPhrases.length)];
+        strategyName = 'Bluff';
+        thinking = 'Chỉ có ' + (faceCounts[chosenFace] || 0) + ' con s\u1ED1 ' + chosenFace + ' \u2014 \u0111ang bluff! Mục đích: dụ \u0111\u1ED1i th\u1EE7 nghĩ mình có nhi\u1EC1u, hoặc ép \u0111\u1ED1i thủ g\u1ECDi Liar sai.';
+      } else if (strategy < 0.90) {
+        var jumpQty = currentBid.quantity + 1 + Math.floor(Math.random() * 2);
+        chosenFace = facesByStrength[Math.floor(Math.random() * Math.min(3, facesByStrength.length))].face;
+        bid = { quantity: jumpQty, faceValue: chosenFace, isChay: false };
+        var aggPhrases = [
+          bidStr(bid) + '! nh\u1EA3y l\u00F4n lun cho a h\u1EBFt \u0111\u01B0\u1EDDng nha kk',
+          't\u0103ng m\u1EA1nh lun! ' + bidStr(bid) + '~ a d\u00E1m theo h\u00F4ng? \uD83D\uDE1D',
+          bidStr(bid) + '! e t\u1EF1 tin l\u1EAFm \u0111\u00F3 a \u01A1i \u2728'
+        ];
+        phrase = aggPhrases[Math.floor(Math.random() * aggPhrases.length)];
+        strategyName = 'Gây áp l\u1EF1c';
+        thinking = 'Nh\u1EA3y quantity lớn (+' + (jumpQty - currentBid.quantity) + ') \u0111\u1EC3 gây áp l\u1EF1c tâm lý. Bu\u1ED9c \u0111\u1ED1i th\u1EE7 ph\u1EA3i quyết \u0111\u1ECBnh nhanh: theo hay g\u1ECDi Liar.';
+      } else {
+        if (facesByStrength[0].count >= 2) {
+          var chayQty = currentBid.isChay ? currentBid.quantity * 2 : facesByStrength[0].count;
+          bid = { quantity: chayQty, faceValue: strongFace, isChay: true };
+          phrase = bidStr(bid) + '! chay lun nha~ a d\u00E1m theo h\u00F4ng \uD83D\uDD25';
+          strategyName = 'Chay bất ng\u1EDD';
+          thinking = 'Có ' + facesByStrength[0].count + ' con s\u1ED1 ' + strongFace + ' thật (không tính wild). Chuy\u1EC3n sang chay \u0111\u1EC3 tận d\u1EE5ng bài m\u1EA1nh và gây bất ng\u1EDD.';
+        } else {
+          bid = { quantity: currentBid.quantity + 1, faceValue: strongFace, isChay: false };
+          phrase = bidStr(bid) + '~ \u0111ii th\u00EAm ch\u00FAt nha a!';
+          strategyName = 'T\u0103ng an toàn';
+          thinking = 'Không đủ bài \u0111\u1EC3 chay, t\u0103ng nh\u1EB9 v\u1EDBi s\u1ED1 m\u1EA1nh nhất (' + strongFace + ') \u0111\u1EC3 duy trì v\u1ECB th\u1EBF.';
+        }
+      }
+    }
+
+    // Validate bid, fallback if invalid
+    if (!isValidBid(bid, currentBid)) {
+      // Try nearby valid bids in random order
+      var candidates = [];
+      for (var tryQty = (currentBid ? currentBid.quantity : 1); tryQty <= Math.min((currentBid ? currentBid.quantity + 3 : 4), totalDice); tryQty++) {
+        for (var tryFace = 2; tryFace <= 6; tryFace++) {
+          var tryBid = { quantity: tryQty, faceValue: tryFace, isChay: false };
+          if (isValidBid(tryBid, currentBid)) candidates.push(tryBid);
+        }
+      }
+      if (candidates.length > 0) {
+        // Pick from candidates weighted by probability
+        var weighted = candidates.map(function(c) { return { bid: c, prob: calculateProbability(aiDice, c, totalDice, false) }; });
+        weighted.sort(function(a, b) { return b.prob - a.prob; });
+        // Don't always pick the best — add randomness
+        var pickIdx = Math.random() < 0.6 ? 0 : Math.floor(Math.random() * Math.min(3, weighted.length));
+        bid = weighted[pickIdx].bid;
+        phrase = phrase || 'thui e \u0111o\u00E1n v\u1EADy nha hihi~';
+      } else {
+        if (!currentBid) return { action: 'bid', bid: { quantity: 3, faceValue: 2 + Math.floor(Math.random() * 5), isChay: false }, reasoning: 'thui e \u0111o\u00E1n nh\u1EB9 nha~ kk', aiAnalysis: { strategy: 'Fallback', probability: 1, diceSummary: diceSummary, thinking: 'Không tìm \u0111\u01B0\u1EE3c bid hợp lệ, \u0111i nhẹ ngẫu nhiên.' } };
+        return { action: 'liar', bid: null, reasoning: 'h\u00F4ng bi\u1EBFt \u0111o\u00E1n g\u00EC n\u1EEFa r... liar lun! \uD83D\uDD25', aiAnalysis: { strategy: 'Liar (hết đ\u01B0\u1EDDng)', probability: 0, diceSummary: diceSummary, thinking: 'Không còn l\u1EDDi \u0111oán hợp lệ nào, buộc phải gọi Liar.' } };
+      }
+      strategyName = strategyName || 'Fallback';
+      thinking = 'Bid ban \u0111\u1EA7u không hợp lệ, chuy\u1EC3n sang bid tốt nhất tìm \u0111\u01B0\u1EE3c theo xác suất.';
+    }
+
+    var finalProb = calculateProbability(aiDice, bid, totalDice, bid.isChay);
+    return { action: 'bid', bid: bid, reasoning: phrase, aiAnalysis: { strategy: strategyName || 'T\u1ED5ng hợp', probability: finalProb, diceSummary: diceSummary, thinking: thinking || '' } };
+  }
+
+  function aiMediumNoNoise(g) {
+    var aiDice = g.players[1].dice, totalDice = g.players[0].dice.length + g.players[1].dice.length, currentBid = g.currentBid;
+    var faceCounts0 = {};
+    for (var ii = 0; ii < aiDice.length; ii++) { var dd = aiDice[ii]; if (dd >= 2) faceCounts0[dd] = (faceCounts0[dd] || 0) + 1; }
+    var wilds0 = aiDice.filter(function(d) { return d === 1; }).length;
+    var diceInfo0 = [];
+    for (var fi0 = 2; fi0 <= 6; fi0++) { if (faceCounts0[fi0]) diceInfo0.push(faceCounts0[fi0] + ' con s\u1ED1 ' + fi0); }
+    if (wilds0 > 0) diceInfo0.push(wilds0 + ' wild (s\u1ED1 1)');
+    var diceSummary0 = diceInfo0.join(', ');
+    if (currentBid) { var prob = calculateProbability(aiDice, currentBid, totalDice, currentBid.isChay); if (prob < 0.45) { var aiCount0 = countDice(aiDice, currentBid.faceValue, currentBid.isChay); return { action: 'liar', bid: null, reasoning: 'a \u0111ang bluff ph\u1EA3i h\u00F4ng? e g\u1ECDi liar nha! \uD83D\uDD25', aiAnalysis: { strategy: 'Liar', probability: prob, diceSummary: diceSummary0, thinking: 'Ch\u1EC9 có ' + aiCount0 + ' con phù hợp, xác su\u1EA5t \u0111\u00FAng chỉ ' + (prob * 100).toFixed(0) + '% \u2014 g\u1ECDi Liar.' } }; } }
+    var faceCounts = faceCounts0;
+    var wilds = wilds0;
+    var facesByStrength = [];
+    for (var f = 2; f <= 6; f++) facesByStrength.push({ face: f, count: (faceCounts[f] || 0), total: (faceCounts[f] || 0) + wilds });
+    facesByStrength.sort(function(a, b) { return b.total - a.total; });
+    var strongFace = facesByStrength[0].face;
+    function bidStr2(b) { return b.quantity + ' con s\u1ED1 ' + b.faceValue + (b.isChay ? ' chay' : ''); }
+
+    var bid, phrase;
+    if (!currentBid) {
+      var openStrat = Math.random();
+      if (openStrat < 0.4) {
+        var weakFaces = facesByStrength.filter(function(x) { return x.count === 0; }).map(function(x) { return x.face; });
+        var face = weakFaces.length > 0 ? weakFaces[Math.floor(Math.random() * weakFaces.length)] : (2 + Math.floor(Math.random() * 5));
+        bid = { quantity: 3, faceValue: face, isChay: false };
+        phrase = bidStr2(bid) + ' n\u00E8~ \u0111ii nh\u1EB9 tr\u01B0\u1EDBc nha a hihi';
+      } else {
+        bid = { quantity: Math.max(3, facesByStrength[0].total - 1), faceValue: strongFace, isChay: false };
+        phrase = 'd\u1EA1 e b\u1EAFt \u0111\u1EA7u v\u1EDBi ' + bidStr2(bid) + ' nha a! \uD83E\uDE77';
+      }
+    } else {
+      var respStrat = Math.random();
+      if (respStrat < 0.4) {
+        bid = null;
+        for (var mf = currentBid.faceValue + 1; mf <= 6; mf++) {
+          var try1 = { quantity: currentBid.quantity, faceValue: mf, isChay: false };
+          if (isValidBid(try1, currentBid)) { bid = try1; break; }
+        }
+        if (!bid) bid = { quantity: currentBid.quantity + 1, faceValue: strongFace, isChay: false };
+        phrase = bidStr2(bid) + '~ t\u0103ng ch\u00FAt th\u00F4i nha kk';
+      } else if (respStrat < 0.65) {
+        var qty = Math.max(facesByStrength[0].total, currentBid.quantity + (strongFace <= currentBid.faceValue ? 1 : 0));
+        bid = { quantity: qty, faceValue: strongFace, isChay: false };
+        phrase = bidStr2(bid) + '! s\u1ED1 ' + strongFace + ' nhiu l\u1EAFm a \u01A1i~';
+      } else if (respStrat < 0.85) {
+        var jumpFace = facesByStrength[Math.floor(Math.random() * Math.min(2, facesByStrength.length))].face;
+        bid = { quantity: currentBid.quantity + 1 + Math.floor(Math.random() * 2), faceValue: jumpFace, isChay: false };
+        phrase = bidStr2(bid) + '! t\u0103ng m\u1EA1nh lun nha a \uD83D\uDE1D';
+      } else {
+        // Chay play
+        if (facesByStrength[0].count >= 2) {
+          var chayQty = currentBid.isChay ? currentBid.quantity * 2 : Math.max(3, Math.ceil(currentBid.quantity / 2));
+          bid = { quantity: Math.max(chayQty, facesByStrength[0].count), faceValue: strongFace, isChay: true };
+          phrase = bidStr2(bid) + '! chay lun nha a~ d\u00E1m h\u00F4ng \uD83D\uDD25';
+        } else {
+          var jumpFace2 = facesByStrength[0].face;
+          bid = { quantity: currentBid.quantity + 1, faceValue: jumpFace2, isChay: false };
+          phrase = bidStr2(bid) + '~ \u0111ii th\u00EAm ch\u00FAt nha a!';
+        }
+      }
+    }
+
+    if (!isValidBid(bid, currentBid)) {
+      var candidates = [];
+      for (var tryQty = (currentBid ? currentBid.quantity : 1); tryQty <= Math.min((currentBid ? currentBid.quantity + 3 : 4), totalDice); tryQty++) {
+        for (var tryFace = 2; tryFace <= 6; tryFace++) {
+          var tryBid = { quantity: tryQty, faceValue: tryFace, isChay: false };
+          if (isValidBid(tryBid, currentBid)) candidates.push(tryBid);
+        }
+      }
+      if (candidates.length > 0) {
+        var weighted = candidates.map(function(c) { return { bid: c, prob: calculateProbability(aiDice, c, totalDice, false) }; });
+        weighted.sort(function(a, b) { return b.prob - a.prob; });
+        var pickIdx = Math.random() < 0.5 ? 0 : Math.floor(Math.random() * Math.min(3, weighted.length));
+        bid = weighted[pickIdx].bid;
+      } else {
+        if (!currentBid) return { action: 'bid', bid: { quantity: 3, faceValue: 2 + Math.floor(Math.random() * 5), isChay: false }, reasoning: 'thui e \u0111o\u00E1n nh\u1EB9 nha a~ hihi', aiAnalysis: { strategy: 'Fallback', probability: 1, diceSummary: diceSummary0, thinking: '\u0110i nhẹ ngẫu nhiên.' } };
+        return { action: 'liar', bid: null, reasoning: 'h\u00F4ng t\u00ECm \u0111c g\u00EC h\u1EE3p l\u00FD r... liar lun! \uD83D\uDD25', aiAnalysis: { strategy: 'Liar (hết \u0111\u01B0\u1EDDng)', probability: 0, diceSummary: diceSummary0, thinking: 'Không còn l\u1EDDi \u0111oán hợp lệ nào.' } };
+      }
+    }
+    var finalProb0 = calculateProbability(aiDice, bid, totalDice, bid.isChay);
+    return { action: 'bid', bid: bid, reasoning: phrase || 'thui e \u0111o\u00E1n v\u1EADy nha~ hihi', aiAnalysis: { strategy: 'T\u1ED5ng hợp', probability: finalProb0, diceSummary: diceSummary0, thinking: 'Xác su\u1EA5t bid này \u0111\u00FAng: ' + (finalProb0 * 100).toFixed(0) + '%.' } };
+  }
+
+  async function aiHard(g) {
+    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'hard'), 'gemini-3.1-flash-lite-preview'), g); }
+    catch (err) { console.warn('Hard AI Gemini failed:', err); return aiMediumNoNoise(g); }
+  }
+
+  async function aiExpert(g) {
+    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'expert'), 'gemini-3.1-pro-preview'), g); }
+    catch (err) { console.warn('Expert AI Gemini failed:', err); try { return await aiHard(g); } catch (err2) { return aiMediumNoNoise(g); } }
+  }
+
+  function buildAiPrompt(g, level) {
+    var aiDice = g.players[1].dice, totalDice = g.players[0].dice.length + g.players[1].dice.length;
+    var historyLines = [];
+    for (var i = 0; i < g.history.length; i++) {
+      var h = g.history[i];
+      if (h.action === 'liar') historyLines.push('Luot ' + h.turn + ': ' + h.player + ' goi LIAR!');
+      else historyLines.push('Luot ' + h.turn + ': ' + h.player + ' doan ' + h.bid.quantity + ' con so ' + h.bid.faceValue + (h.bid.isChay ? ' (chay)' : ''));
+    }
+    var currentBidText = g.currentBid ? 'Loi doan hien tai: ' + g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' (chay)' : '') : 'Chua co loi doan nao (ban di truoc).';
+    var strategyInstruction = '\n\nCHIEN LUOC DA DANG (QUAN TRONG - khong duoc choi 1 mo-tip):\n- Khong phai luc nao cung doan mat so minh co nhieu nhat. Doi khi bluff mat so minh KHONG co de giau bai.\n- Mo dau voi so nho, mat so ngau nhien hoac mat so minh khong co. Tang dan ve sau.\n- Doi khi tang nhe (chi tang mat so), doi khi nhay lon (tang quantity manh) de gay ap luc.\n- Doi khi choi chay bat ngo khi co tay manh.\n- Doc pattern doi thu: neu ho lien tuc tang 1 mat so, co the ho co nhieu mat do. Neu ho tang nhe, co the ho dang can.\n- Moi van choi 1 kieu khac: van nay conservative, van sau aggressive, van khac bluff nhieu.\n- Khong bao gio choi theo cong thuc co dinh.';
+    var depthInstruction = level === 'expert'
+      ? 'Ban la bac thay Liar\'s Dice. Phan tich sau: xac suat binomial, doc pattern nguoi choi tu lich su, chien luoc bluff/chay nang cao. Suy nghi nhieu buoc truoc khi quyet dinh.' + strategyInstruction
+      : 'Ban la nguoi choi Liar\'s Dice co kinh nghiem. Tinh xac suat va dua ra quyet dinh hop ly.' + strategyInstruction;
+    var personalityInstruction = 'Ban ten la An Nhien, co gai 20 tuoi, de thuong, tinh nghich, nu tinh.\n\nPHONG CACH CHAT (BAT BUOC lam theo):\n- Viet tat tu nhien: "hong" (khong), "r" (roi), "dii" (di), "nhiu" (nhieu), "a" (anh), "e" (em), "nha" (nhe), "lun" (luon), "dc" (duoc), "thui" (thoi)\n- Keo dai chu de dang yeu: "nhiiuu", "diii", "nhiuuu", "hihi", "kk"\n- Dung "ne", "nha", "di", "a", "hen" cuoi cau\n- Them emoji: \uD83E\uDE77 \u2728 \uD83D\uDE1D \uD83C\uDF38 \uD83D\uDD25 (it thoi, 0-1 emoji moi cau)\n- Treo dua nhe nhang: "ong cu", "gioi qua hen", "dam hong"\n- Mix lich su + than mat: "da" + "hihi" trong cung cau\n- Giu ngan gon 1-2 cau, giong nhu dang chat qua tin nhan\n- KHONG dung dau cham cuoi cau, dung "~" hoac "!" hoac khong gi\n\nVI DU DUNG (reasoning PHAI bao gom thong tin bid):\n- "3 con so 4 ne a~ e co linh cam lun hihi"\n- "4 con so 5! nhiu lam a oi dam theo hong \uD83D\uDE1D"\n- "thui 2 con so 3 dii nha~"\n- "e hong tin dau! LIAR lun \uD83D\uDD25"\n- "da e doan 3 con so 6 nha a \uD83E\uDE77"\n- "5 con so 2 chay lun! dam hong a oi \uD83D\uDD25"\n\nVI DU SAI (KHONG lam theo):\n- "Em doan 3 con so 4. Em tin la co nhieu so 4 tren ban." (qua formal, qua dai)\n- "Toi doan..." (khong dung "toi")\n- Chi tra ve reasoning ma khong co thong tin bid\n\nQUAN TRONG: reasoning PHAI chua thong tin bid (so luong + mat so) trong cau noi tu nhien. Vi du: "3 con so 4 ne~" KHONG phai "em doan roi" ma khong noi doan gi.';
+    return depthInstruction + '\n\n' + personalityInstruction + '\n\n' +
+      'LUAT CHOI:\n- Moi nguoi 5 xuc xac. Tong ' + totalDice + ' con tren ban.\n- So 1 la wild (tinh thay cho 2-6) trong mode thuong.\n- Choi chay: khong tinh wild, chi tinh dung mat so. Khi da vao chay, luot sau phai gap doi so luong.\n- Loi doan sau phai manh hon: tang so luong HOAC giu nguyen + tang mat.\n- Thua la thua luon van.\n\n' +
+      'TINH HUONG HIEN TAI:\n- Xuc xac cua ban (An Nhien): [' + aiDice.join(', ') + ']\n- Doi thu co 5 con (an).\n- ' + currentBidText + '\n\n' +
+      'LICH SU VAN:\n' + (historyLines.join('\n') || '(Chua co)') + '\n\n' +
+      'HAY QUYET DINH. Tra ve JSON dung format:\n{\n  "action": "bid" hoac "liar",\n  "bid": { "quantity": <so>, "faceValue": <2-6>, "isChay": <true/false> },\n  "reasoning": "<giai thich ngan gon bang tieng Viet, them cam xuc de thuong>"\n}\n\nCHI tra ve JSON, khong them gi khac.';
+  }
+
+  function validateAiResponse(result, g) {
+    if (!result || !result.action) throw new Error('Invalid AI response format');
+    var aiDice = g.players[1].dice, totalDice = g.players[0].dice.length + g.players[1].dice.length;
+    // Build dice summary for Gemini AI
+    var fc = {}, wc = 0;
+    for (var vi = 0; vi < aiDice.length; vi++) { if (aiDice[vi] === 1) wc++; else fc[aiDice[vi]] = (fc[aiDice[vi]] || 0) + 1; }
+    var di = []; for (var vf = 2; vf <= 6; vf++) { if (fc[vf]) di.push(fc[vf] + ' con s\u1ED1 ' + vf); } if (wc > 0) di.push(wc + ' wild');
+    var ds = di.join(', ');
+    if (result.action === 'liar') {
+      var lProb = g.currentBid ? calculateProbability(aiDice, g.currentBid, totalDice, g.currentBid.isChay) : 0;
+      var lCount = g.currentBid ? countDice(aiDice, g.currentBid.faceValue, g.currentBid.isChay) : 0;
+      return { action: 'liar', bid: null, reasoning: result.reasoning || '', aiAnalysis: { strategy: 'Liar (Gemini)', probability: lProb, diceSummary: ds, thinking: (result.reasoning || '') + ' | Có ' + lCount + ' con phù hợp, xác su\u1EA5t ' + (lProb * 100).toFixed(0) + '%.' } };
+    }
+    if (!result.bid) throw new Error('AI bid missing');
+    var bid = { quantity: parseInt(result.bid.quantity), faceValue: parseInt(result.bid.faceValue), isChay: !!result.bid.isChay };
+    if (!isValidBid(bid, g.currentBid)) {
+      console.warn('AI invalid bid:', bid);
+      if (!g.currentBid) {
+        return { action: 'bid', bid: { quantity: 3, faceValue: 2 + Math.floor(Math.random() * 5), isChay: false }, reasoning: 'thui e \u0111o\u00E1n nh\u1EB9 nha~ hihi', aiAnalysis: { strategy: 'Fallback (Gemini)', probability: 1, diceSummary: ds, thinking: 'Gemini đoán không hợp lệ, \u0111i nhẹ thay th\u1EBF.' } };
+      }
+      return { action: 'liar', bid: null, reasoning: 'hmm h\u00F4ng bi\u1EBFt \u0111o\u00E1n g\u00EC r... liar nha a! \uD83D\uDE1D', aiAnalysis: { strategy: 'Liar (fallback)', probability: 0, diceSummary: ds, thinking: 'Bid Gemini tr\u1EA3 v\u1EC1 không hợp lệ, chuyển sang gọi Liar.' } };
+    }
+    var bProb = calculateProbability(aiDice, bid, totalDice, bid.isChay);
+    return { action: 'bid', bid: bid, reasoning: result.reasoning || '', aiAnalysis: { strategy: 'Gemini AI', probability: bProb, diceSummary: ds, thinking: (result.reasoning || 'Gemini quyết \u0111\u1ECBnh') + ' | Xác su\u1EA5t: ' + (bProb * 100).toFixed(0) + '%.' } };
+  }
+
+  async function showCoachFeedback(action) {
+    var g = state.game, panel = document.getElementById('coachPanel'), probability = action.probability;
+    var rating; if (probability >= 0.7) rating = 'excellent'; else if (probability >= 0.5) rating = 'good'; else if (probability >= 0.3) rating = 'risky'; else rating = 'bad';
+    var myDice = g.players[0].dice, localExplanation = '';
+    if (action.action === 'bid') {
+      var myCount = countDice(myDice, action.bid.faceValue, action.bid.isChay);
+      var needed = action.bid.quantity - myCount;
+      localExplanation = 'B\u1EA1n có ' + myCount + ' con s\u1ED1 ' + action.bid.faceValue + (action.bid.isChay ? '' : ' (k\u1EC3 c\u1EA3 wild)') + '. \u0110\u1ED1i th\u1EE7 c\u1EA7n có ' + Math.max(0, needed) + ' con n\u1EEFa trong 5 con.';
+      if (probability >= 0.7) localExplanation += ' N\u01B0\u1EDBc \u0111i an toàn, có th\u1EC3 t\u0103ng m\u1EA1nh h\u01A1n \u0111\u1EC3 gây áp l\u1EF1c.';
+      else if (probability >= 0.5) localExplanation += ' H\u1EE3p lý \u2014 nên gi\u1EEF nh\u1ECBp và \u0111\u1ECDc pattern \u0111\u1ED1i th\u1EE7.';
+      else if (probability >= 0.3) localExplanation += ' R\u1EE7i ro cao \u2014 nên cân nh\u1EAFc g\u1ECDi Liar ho\u1EB7c \u0111\u1ED5i m\u1EB7t s\u1ED1 an toàn h\u01A1n.';
+      else localExplanation += ' Nguy hi\u1EC3m! Nên g\u1ECDi Liar ho\u1EB7c ch\u1ECDn m\u1EB7t s\u1ED1 b\u1EA1n có nhi\u1EC1u h\u01A1n.';
+    } else {
+      localExplanation = 'L\u1EDDi \u0111oán tr\u01B0\u1EDBc: ' + g.currentBid.quantity + ' con s\u1ED1 ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' (chay)' : '') + '. Xác su\u1EA5t \u0111úng: ' + ((1 - probability) * 100).toFixed(0) + '%.';
+      if (probability >= 0.6) localExplanation += ' G\u1ECDi Liar \u0111úng lúc \u2014 xác su\u1EA5t sai cao!';
+      else if (probability >= 0.4) localExplanation += ' 50/50 \u2014 có th\u1EC3 ch\u1EDD thêm n\u1EBFu ch\u01B0a ch\u1EAFc.';
+      else localExplanation += ' L\u1EDDi \u0111oán tr\u01B0\u1EDBc khá h\u1EE3p lý, g\u1ECDi Liar h\u01A1i s\u1EDBm. Nên t\u0103ng nh\u1EB9 thay vì g\u1ECDi Liar.';
+    }
+    var icons = { excellent: '\uD83D\uDFE2', good: '\uD83D\uDD35', risky: '\uD83D\uDFE1', bad: '\uD83D\uDD34' };
+    var labels = { excellent: 'Tuy\u1EC7t v\u1EDDi', good: 'T\u1ED1t', risky: 'R\u1EE7i ro', bad: 'T\u1EC7' };
+    document.getElementById('coachIcon').textContent = icons[rating];
+    document.getElementById('coachRating').textContent = labels[rating];
+    document.getElementById('coachProb').textContent = '(' + (probability * 100).toFixed(0) + '%)';
+    document.getElementById('coachBody').innerHTML = localExplanation;
+    panel.className = 'card coach-panel visible rating-' + rating;
+    pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: localExplanation, reasoning: localExplanation };
+    if (getApiKey()) {
+      try {
+        var geminiCoach = await getGeminiCoachFeedback(g, action, probability, localExplanation);
+        if (geminiCoach && geminiCoach.whyGoodOrBad) {
+          document.getElementById('coachBody').innerHTML = geminiCoach.whyGoodOrBad + (geminiCoach.betterMove ? '<div class="suggestion">\uD83D\uDCA1 G\u1EE3i ý: ' + geminiCoach.betterMove + '</div>' : '');
+          pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: geminiCoach.whyGoodOrBad, betterMove: geminiCoach.betterMove, reasoning: geminiCoach.reasoning || localExplanation };
+        }
+      } catch (err) { console.warn('Coach Gemini failed:', err); }
+    }
+  }
+
+  async function getGeminiCoachFeedback(g, action, probability, localContext) {
+    var myDice = g.players[0].dice;
+    var actionText = action.action === 'liar' ? 'goi LIAR tren loi doan "' + g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' chay' : '') + '"' : 'doan "' + action.bid.quantity + ' con so ' + action.bid.faceValue + (action.bid.isChay ? ' chay' : '') + '"';
+    var currentBidText = g.currentBid ? g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' (chay)' : '') : 'chua co';
+    var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep. Danh gia nuoc di cua nguoi choi.\n\nTINH HUONG:\n- Xuc xac nguoi choi: [' + myDice.join(', ') + ']\n- Tong 10 con tren ban (5 an cua doi thu)\n- So 1 la wild (tru khi choi chay)\n- Loi doan hien tai tren ban: ' + currentBidText + '\n- Nguoi choi vua ' + actionText + '\n- Xac suat: ' + (probability * 100).toFixed(1) + '%\n- Context: ' + localContext + '\n\nQUAN TRONG: Dua ra goi y CHIEN LUOC cu the, khong chi giai thich tinh huong. Vi du:\n- "Nen tang nhe so mat de giu an toan va doc pattern doi thu"\n- "Day la luc nen bluff vi doi thu da tang lien tuc, co the ho dang can"\n- "Nen goi Liar vi xac suat qua thap, giu bai cho luot sau"\n- "Choi chay o day rat manh vi ban co 3 con so X"\nLuon goi y 1 nuoc di cu the tot hon (neu co).\n\nTra ve JSON:\n{\n  "whyGoodOrBad": "<giai thich TAI SAO nuoc di nay tot/te, 2-3 cau, tieng Viet>",\n  "betterMove": "<goi y nuoc di tot hon neu co, null neu nuoc di da tot>",\n  "reasoning": "<logic chi tiet>"\n}';
+    return callGemini(prompt, 'gemini-3.1-pro-preview');
+  }
+
+  function doReveal() {
+    var g = state.game, result = resolveLiar(g); g.phase = 'finished'; g.result = result;
+    var isPlayerWinner = result.winnerIndex === 0;
+    var titleEl = document.getElementById('revealTitle');
+    titleEl.textContent = isPlayerWinner ? '\uD83C\uDF89 B\u1EA1n th\u1EAFng!' : '\uD83D\uDE24 B\u1EA1n thua!';
+    titleEl.className = isPlayerWinner ? 'result-win' : 'result-lose';
+    var lastBid = result.lastBid;
+    var aiDiceHtml = '';
+    for (var i = 0; i < g.players[1].dice.length; i++) { var d = g.players[1].dice[i]; var isMatch = d === lastBid.faceValue || (!lastBid.isChay && d === 1); aiDiceHtml += renderDie(d, isMatch ? 'die-match-glow dice-flip' : 'dice-flip'); }
+    document.getElementById('revealAiDice').innerHTML = aiDiceHtml;
+    var playerDiceHtml = '';
+    for (var j = 0; j < g.players[0].dice.length; j++) { var pd = g.players[0].dice[j]; var pMatch = pd === lastBid.faceValue || (!lastBid.isChay && pd === 1); playerDiceHtml += renderDie(pd, pMatch ? 'die-match-glow' : ''); }
+    document.getElementById('revealPlayerDice').innerHTML = playerDiceHtml;
+    document.getElementById('revealSummary').innerHTML = 'L\u1EDDi \u0111oán: <strong>' + lastBid.quantity + ' con s\u1ED1 ' + lastBid.faceValue + '</strong>' + (lastBid.isChay ? ' chay' : '') + '<br>Th\u1EF1c t\u1EBF: <strong>' + result.actualCount + ' con</strong>' + (lastBid.isChay ? ' (chay - không tính wild)' : ' (k\u1EC3 c\u1EA3 wild)') + '<br>\u2192 L\u1EDDi \u0111oán ' + (result.bidCorrect ? '\u0110ÚNG' : 'SAI');
+    var revealSpeechEl = document.getElementById('revealAiSpeech');
+    var lastAiEntry = null;
+    for (var li = g.history.length - 1; li >= 0; li--) { if (g.history[li].player === 'An Nhi\u00EAn') { lastAiEntry = g.history[li]; break; } }
+    if (lastAiEntry || state._lastAiSpeech) {
+      var spText = state._lastAiSpeech || (lastAiEntry.reasoning || '');
+      if (spText) { revealSpeechEl.innerHTML = '<div class="ai-speech-wrap"><div class="ai-avatar ai-avatar-sm"><img src="' + AVATAR_SVG + '" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div><div class="ai-speech">' + spText + '</div></div>'; revealSpeechEl.style.display = 'block'; }
+      else { revealSpeechEl.style.display = 'none'; }
+    } else { revealSpeechEl.style.display = 'none'; }
+    state._lastAiSpeech = null;
+    showScreen('screen-reveal');
+    prepareAnalysis(g, result, isPlayerWinner);
+  }
+
+  async function prepareAnalysis(g, result, isPlayerWinner) {
+    var humanTurns = [], humanBids = [], liarCalls = [];
+    for (var i = 0; i < g.history.length; i++) { var h = g.history[i]; if (h.player === 'B\u1EA1n') { humanTurns.push(h); if (h.action === 'bid') humanBids.push(h); if (h.action === 'liar') liarCalls.push(h); } }
+    var correctBids = 0, riskyBids = 0, totalRetakes = 0;
+    for (var j = 0; j < humanBids.length; j++) { if ((humanBids[j].probability || 0) >= 0.5) correctBids++; if ((humanBids[j].probability || 0) < 0.3) riskyBids++; }
+    for (var k = 0; k < humanTurns.length; k++) totalRetakes += (humanTurns[k].retakes || 0);
+    var accuracyRate = humanBids.length > 0 ? correctBids / humanBids.length : 0;
+    var liarCallsCorrectCount = 0;
+    if (liarCalls.length > 0) { var lastHistory = g.history[g.history.length - 1]; if (lastHistory.player === 'B\u1EA1n' && lastHistory.action === 'liar' && !result.bidCorrect) liarCallsCorrectCount = 1; }
+    var report = { result: isPlayerWinner ? 'win' : 'lose', difficulty: g.difficulty, totalTurns: g.history.length, myBids: humanBids.length, correctBids: correctBids, riskyBids: riskyBids, retakes: totalRetakes, accuracyRate: accuracyRate, liarCallsTotal: liarCalls.length, liarCallsCorrect: liarCallsCorrectCount };
+    g._report = report;
+    renderReportTab(report); renderTurnTimeline(g.history); await renderDeepAnalysis(g, result, report); updateStats(report, g); await saveGameToDB_wrapper(g, result, report);
+  }
+
+  async function saveGameToDB_wrapper(g, result, report) {
+    try { state.gameCounter++; var md = generateGameMarkdown(g, result, report, state.gameCounter); await saveGameToDB({ date: new Date().toISOString(), difficulty: g.difficulty, result: report.result, report: report, history: g.history, analysis: g.deepAnalysis || null, playerDice: g.players[0].dice, aiDice: g.players[1].dice, markdown: md, gameNumber: state.gameCounter }); } catch (err) { console.error('Error saving game:', err); }
+  }
+
+  function renderReportTab(report) {
+    var grid = document.getElementById('reportGrid');
+    var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+    var items = [
+      { label: 'K\u1EBFt qu\u1EA3', value: report.result === 'win' ? '\uD83C\uDFC6 Th\u1EAFng' : '\uD83D\uDC80 Thua' },
+      { label: 'C\u1EA5p \u0111\u1ED9', value: diffLabels[report.difficulty] }, { label: 'T\u1ED5ng l\u01B0\u1EE3t', value: report.totalTurns },
+      { label: 'L\u01B0\u1EE3t \u0111oán', value: report.myBids }, { label: '\u0110oán t\u1ED1t (>50%)', value: report.correctBids + '/' + report.myBids },
+      { label: '\u0110oán r\u1EE7i ro (<30%)', value: report.riskyBids }, { label: 'Accuracy', value: (report.accuracyRate * 100).toFixed(0) + '%' },
+      { label: '\u0110oán l\u1EA1i', value: report.retakes }
+    ];
+    var html = '';
+    for (var i = 0; i < items.length; i++) html += '<div class="card" style="padding:12px;text-align:center;"><div style="font-size:11px;color:var(--text-secondary);margin-bottom:4px;">' + items[i].label + '</div><div style="font-size:20px;font-weight:700;">' + items[i].value + '</div></div>';
+    grid.innerHTML = html;
+  }
+
+  function renderTurnTimeline(history) {
+    var container = document.getElementById('turnTimeline'), g = state.game, html = '';
+    for (var i = 0; i < history.length; i++) {
+      var h = history[i];
+      var dotClass = 'dot-correct';
+      if (h.player === 'B\u1EA1n') { if ((h.probability || 0) < 0.3) dotClass = 'dot-wrong'; else if ((h.probability || 0) < 0.5) dotClass = 'dot-risky'; } else { dotClass = ''; }
+      var text = '';
+      if (h.action === 'liar') text = '<strong>' + h.player + '</strong> g\u1ECDi LIAR!';
+      else text = '<strong>' + h.player + '</strong>: ' + h.bid.quantity + ' con s\u1ED1 ' + h.bid.faceValue + (h.bid.isChay ? ' (chay)' : '');
+      if (h.player === 'B\u1EA1n' && h.probability !== undefined) text += ' <span style="color:var(--text-muted);font-size:12px;">(' + (h.probability * 100).toFixed(0) + '%)</span>';
+      if (h.retakes > 0) text += ' <span style="color:var(--warning);font-size:12px;">\u21BA' + h.retakes + '</span>';
+
+      var analysisHtml = '';
+      if (h.player === 'B\u1EA1n' && h.action === 'bid' && h.probability !== undefined) {
+        var myCount = countDice(g.players[0].dice, h.bid.faceValue, h.bid.isChay);
+        var needed = h.bid.quantity - myCount;
+        var pPercent = (h.probability * 100).toFixed(0);
+        analysisHtml = '<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);line-height:1.5;">';
+        analysisHtml += 'B\u1EA1n có ' + myCount + ' con s\u1ED1 ' + h.bid.faceValue + (h.bid.isChay ? '' : ' (k\u1EC3 c\u1EA3 wild)') + '. ';
+        analysisHtml += 'An Nhi\u00EAn c\u1EA7n có ' + Math.max(0, needed) + '/' + g.players[1].dice.length + ' con \u2192 ';
+        if (h.probability >= 0.7) analysisHtml += '<span style="color:var(--success);">R\u1EA5t an toàn (' + pPercent + '%)</span>';
+        else if (h.probability >= 0.5) analysisHtml += '<span style="color:var(--accent);">H\u1EE3p lý (' + pPercent + '%)</span>';
+        else if (h.probability >= 0.3) analysisHtml += '<span style="color:var(--warning);">R\u1EE7i ro (' + pPercent + '%). Nên cân nh\u1EAFc g\u1ECDi Liar ho\u1EB7c \u0111\u1ED5i m\u1EB7t s\u1ED1.</span>';
+        else analysisHtml += '<span style="color:var(--danger);">Nguy hi\u1EC3m (' + pPercent + '%). ' + (needed >= 4 ? 'G\u1EA7n nh\u01B0 không th\u1EC3.' : '\u0110\u1ED1i th\u1EE7 c\u1EA7n quá nhi\u1EC1u con.') + '</span>';
+        analysisHtml += '</div>';
+      }
+      if (h.player === 'B\u1EA1n' && h.action === 'liar' && h.probability !== undefined) {
+        analysisHtml = '<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);line-height:1.5;">';
+        analysisHtml += 'L\u1EDDi \u0111oán tr\u01B0\u1EDBc có ' + ((1 - h.probability) * 100).toFixed(0) + '% \u0111úng. ';
+        if (h.probability >= 0.6) analysisHtml += '<span style="color:var(--success);">G\u1ECDi Liar \u0111úng th\u1EDDi \u0111i\u1EC3m!</span>';
+        else if (h.probability >= 0.4) analysisHtml += '<span style="color:var(--warning);">50/50 \u2014 có th\u1EC3 \u0111úng ho\u1EB7c sai.</span>';
+        else analysisHtml += '<span style="color:var(--danger);">G\u1ECDi Liar quá s\u1EDBm \u2014 l\u1EDDi \u0111oán tr\u01B0\u1EDBc khá h\u1EE3p lý.</span>';
+        analysisHtml += '</div>';
+      }
+      if (h.player !== 'B\u1EA1n') {
+        var aiA = h.aiAnalysis;
+        if (aiA) {
+          analysisHtml = '<div style="margin-top:6px;font-size:12px;line-height:1.6;">';
+          analysisHtml += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">';
+          analysisHtml += '<span style="background:rgba(138,180,248,0.15);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">' + aiA.strategy + '</span>';
+          if (aiA.probability !== undefined) {
+            var aiProbPct = (aiA.probability * 100).toFixed(0);
+            var aiProbColor = aiA.probability >= 0.6 ? 'var(--success)' : aiA.probability >= 0.35 ? 'var(--warning)' : 'var(--danger)';
+            analysisHtml += '<span style="color:' + aiProbColor + ';font-size:11px;">XS: ' + aiProbPct + '%</span>';
+          }
+          analysisHtml += '</div>';
+          analysisHtml += '<div style="color:var(--text-secondary);border-left:2px solid rgba(138,180,248,0.3);padding-left:8px;">';
+          analysisHtml += '<div style="color:var(--text-muted);font-size:11px;margin-bottom:2px;">Bài: ' + aiA.diceSummary + '</div>';
+          analysisHtml += '<div>' + aiA.thinking + '</div>';
+          analysisHtml += '</div></div>';
+        } else if (h.reasoning) {
+          analysisHtml = '<div style="margin-top:6px;font-size:12px;color:var(--text-muted);font-style:italic;">"' + h.reasoning + '"</div>';
+        }
+      }
+      if (h.coachFeedback && h.coachFeedback.whyGoodOrBad) analysisHtml += '<div style="margin-top:4px;font-size:12px;color:var(--accent);border-left:2px solid var(--accent);padding-left:8px;">Coach: ' + h.coachFeedback.whyGoodOrBad + '</div>';
+
+      if (h.player === 'B\u1EA1n') {
+        html += '<div class="turn-item-player fade-in"><div class="turn-bubble-player">' + text + analysisHtml + '</div></div>';
+      } else {
+        html += '<div class="turn-item-ai fade-in"><div class="turn-avatar-mini">AN</div><div class="turn-bubble-ai">' + text + analysisHtml + '</div></div>';
+      }
+    }
+    container.innerHTML = html;
+  }
+
+  async function renderDeepAnalysis(g, result, report) {
+    var container = document.getElementById('lessonsContent');
+    if (!getApiKey()) { container.innerHTML = '<p style="color:var(--text-secondary);">C\u1EA7n Gemini API Key \u0111\u1EC3 xem phân tích chuyên sâu.</p>'; return; }
+    container.innerHTML = '<div class="ai-thinking"><div class="spinner"></div><span>\u0110ang phân tích v\u1EDBi Gemini...</span></div>';
+    try {
+      var analysis;
+      try { analysis = await getDeepAnalysis(g, result, report); }
+      catch (retryErr) { console.warn('Deep analysis retry:', retryErr); analysis = await getDeepAnalysis(g, result, report); }
+      var html = '';
+      if (analysis.summary) html += '<div class="lesson-section"><h4>Tóm t\u1EAFt</h4><div class="lesson-item">' + analysis.summary + '</div></div>';
+      if (analysis.keyMistakes && analysis.keyMistakes.length > 0) { html += '<div class="lesson-section"><h4>\u274C Sai l\u1EA7m chính</h4>'; for (var i = 0; i < analysis.keyMistakes.length; i++) { var m = analysis.keyMistakes[i]; html += '<div class="lesson-item"><div class="turn-ref">L\u01B0\u1EE3t ' + m.turn + '</div><div><strong>B\u1EA1n \u0111ã:</strong> ' + m.whatYouDid + '</div><div><strong>Nên:</strong> ' + m.whatShouldDo + '</div><div style="color:var(--text-secondary);margin-top:4px;">' + m.whyItMatters + '</div></div>'; } html += '</div>'; }
+      if (analysis.goodDecisions && analysis.goodDecisions.length > 0) { html += '<div class="lesson-section"><h4>\u2705 Quy\u1EBFt \u0111\u1ECBnh hay</h4>'; for (var j = 0; j < analysis.goodDecisions.length; j++) { var d = analysis.goodDecisions[j]; html += '<div class="lesson-item"><div class="turn-ref">L\u01B0\u1EE3t ' + d.turn + '</div><div>' + d.whatYouDid + '</div><div style="color:var(--success);margin-top:4px;">' + d.whyItWasGood + '</div></div>'; } html += '</div>'; }
+      if (analysis.anNhienStrategy && analysis.anNhienStrategy.length > 0) {
+        html += '<div class="lesson-section"><h4>\uD83E\uDDE0 Học t\u1EEB An Nhi\u00EAn</h4>';
+        for (var ai = 0; ai < analysis.anNhienStrategy.length; ai++) {
+          var s = analysis.anNhienStrategy[ai];
+          html += '<div class="lesson-item" style="border-left:3px solid rgba(138,180,248,0.4);padding-left:16px;">';
+          html += '<div class="turn-ref">L\u01B0\u1EE3t ' + s.turn + '</div>';
+          html += '<div><strong>An Nhi\u00EAn \u0111ã:</strong> ' + s.whatSheDid + '</div>';
+          html += '<div style="color:var(--accent);margin-top:4px;">\u0110i\u1EC3m hay: ' + s.whySmart + '</div>';
+          html += '<div style="color:var(--success);margin-top:4px;">\uD83D\uDCA1 B\u1EA1n h\u1ECDc \u0111\u01B0\u1EE3c: ' + s.whatToLearn + '</div>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      if (analysis.patterns) html += '<div class="lesson-section"><h4>\uD83D\uDCCA Xu h\u01B0\u1EDBng ch\u01A1i</h4><div class="lesson-item">' + analysis.patterns + '</div></div>';
+      if (analysis.lessonLearned) html += '<div class="lesson-section"><h4>\uD83D\uDCDD Bài h\u1ECDc</h4><div class="lesson-item">' + analysis.lessonLearned + '</div></div>';
+      if (analysis.actionableTip) html += '<div class="lesson-section"><h4>\uD83D\uDCA1 Tip cho ván sau</h4><div class="lesson-item" style="border-left:3px solid var(--accent);padding-left:16px;">' + analysis.actionableTip + '</div></div>';
+      container.innerHTML = html || '<p style="color:var(--text-secondary);">Không có phân tích.</p>';
+      g.deepAnalysis = analysis;
+    } catch (err) { console.error('Deep analysis failed:', err); container.innerHTML = '<p style="color:var(--danger);">Không th\u1EC3 phân tích: ' + err.message + '</p>'; }
+  }
+
+  async function getDeepAnalysis(g, result, report) {
+    var historyLines = [];
+    for (var i = 0; i < g.history.length; i++) {
+      var h = g.history[i];
+      var line = 'L' + h.turn + ': ' + h.player;
+      if (h.action === 'liar') { line += ' LIAR'; }
+      else { line += ' ' + h.bid.quantity + 'x' + h.bid.faceValue + (h.bid.isChay ? '(chay)' : ''); }
+      if (h.probability !== undefined) line += ' p=' + (h.probability*100).toFixed(0) + '%';
+      if (h.aiAnalysis) line += ' [' + h.aiAnalysis.strategy + ' p=' + (h.aiAnalysis.probability*100).toFixed(0) + '%]';
+      historyLines.push(line);
+    }
+    var prompt = 'Ban la thay day Liar Dice lao luyen 20 nam kinh nghiem. Phan tich van dau nay nhu dang day hoc tro.\n\n'
+      + 'Ket qua: ' + (result.winnerIndex === 0 ? 'Nguoi choi THANG' : 'Nguoi choi THUA') + '\n'
+      + 'Xuc xac nguoi choi: [' + g.players[0].dice.join(',') + ']\n'
+      + 'Xuc xac An Nhien: [' + g.players[1].dice.join(',') + ']\n'
+      + 'Luat: So 1 la wild (tru chay). Thua la bi loai.\n\n'
+      + 'Dien bien:\n' + historyLines.join('\n') + '\n\n'
+      + 'Mo bai: ' + result.lastBid.quantity + 'x' + result.lastBid.faceValue + (result.lastBid.isChay ? ' chay' : '') + ' thuc te=' + result.actualCount + ' -> ' + (result.bidCorrect ? 'DUNG' : 'SAI') + '\n\n'
+      + 'Viet tieng Viet. Giu cau ngan gon (moi cau duoi 50 tu). Tra ve JSON:\n'
+      + '{"summary":"tom tat 2 cau","keyMistakes":[{"turn":1,"whatYouDid":"mo ta","whatShouldDo":"goi y","whyItMatters":"ly do"}],"goodDecisions":[{"turn":1,"whatYouDid":"mo ta","whyItWasGood":"ly do"}],"anNhienStrategy":[{"turn":1,"whatSheDid":"mo ta","whySmart":"giai thich","whatToLearn":"bai hoc"}],"patterns":"xu huong","lessonLearned":"bai hoc chinh","actionableTip":"1 meo cu the"}\n\n'
+      + 'Luu y: anNhienStrategy la phan QUAN TRONG NHAT. Phan tich tu goc nhin chien luoc gia: khi nao bluff, khi nao goi liar, doc pattern doi thu, tinh xac suat, ap luc tam ly. Day nguoi choi tu duy nhu cao thu.';
+    return callGemini(prompt, 'gemini-3.1-pro-preview');
+  }
+
+  function updateStats(report, g) {
+    var s = state.stats, d = s.byDifficulty[report.difficulty];
+    if (!d._accuracyHistory) d._accuracyHistory = []; if (!d._liarHistory) d._liarHistory = [];
+    if (!d._retakeHistory) d._retakeHistory = []; if (!d._bluffFaces) d._bluffFaces = {};
+    var isWin = report.result === 'win';
+    s.overall.totalGames++; if (isWin) s.overall.totalWins++; s.overall.winRate = s.overall.totalWins / s.overall.totalGames;
+    d.games++; if (isWin) d.wins++; else d.losses++; d.winRate = d.wins / d.games;
+    if (isWin) d.currentStreak = d.currentStreak > 0 ? d.currentStreak + 1 : 1;
+    else d.currentStreak = d.currentStreak < 0 ? d.currentStreak - 1 : -1;
+    d.bestStreak = Math.max(d.bestStreak, d.currentStreak);
+    d._accuracyHistory.push(report.accuracyRate); d.avgAccuracy = avg(d._accuracyHistory);
+    var liarCorrect = report.liarCallsTotal > 0 ? report.liarCallsCorrect / report.liarCallsTotal : null;
+    if (liarCorrect !== null) { d._liarHistory.push(liarCorrect); d.avgLiarCorrect = avg(d._liarHistory); }
+    var humanTurnCount = 0; for (var i = 0; i < g.history.length; i++) if (g.history[i].player === 'B\u1EA1n') humanTurnCount++;
+    d._retakeHistory.push(humanTurnCount > 0 ? report.retakes / humanTurnCount : 0); d.avgRetakeRate = avg(d._retakeHistory);
+    for (var j = 0; j < g.history.length; j++) { var hb = g.history[j]; if (hb.player === 'B\u1EA1n' && hb.action === 'bid') { if (countDice(g.players[0].dice, hb.bid.faceValue, hb.bid.isChay) === 0) d._bluffFaces[hb.bid.faceValue] = (d._bluffFaces[hb.bid.faceValue] || 0) + 1; } }
+    var maxBluff = 0, faces = Object.keys(d._bluffFaces);
+    for (var k = 0; k < faces.length; k++) { if (d._bluffFaces[faces[k]] > maxBluff) { maxBluff = d._bluffFaces[faces[k]]; d.mostBluffedFace = parseInt(faces[k]); } }
+    d.last10.push(isWin ? 'W' : 'L'); if (d.last10.length > 10) d.last10.shift();
+    d.last10WinRate = d.last10.filter(function(x) { return x === 'W'; }).length / d.last10.length;
+    var prevWinRate = d.games > 10 ? (d.wins - d.last10.filter(function(x) { return x === 'W'; }).length) / (d.games - d.last10.length) : d.winRate;
+    if (d.last10WinRate > prevWinRate + 0.05) d.trendDirection = '\u25B2'; else if (d.last10WinRate < prevWinRate - 0.05) d.trendDirection = '\u25BC'; else d.trendDirection = '\u2192';
+    saveStats();
+  }
+
+  function avg(arr) { if (!arr || arr.length === 0) return 0; var sum = 0; for (var i = 0; i < arr.length; i++) sum += arr[i]; return sum / arr.length; }
+
+  function renderStats() {
+    var s = state.stats;
+    document.getElementById('stat-total').textContent = s.overall.totalGames;
+    document.getElementById('stat-winrate').textContent = (s.overall.winRate * 100).toFixed(0) + '%';
+    var overallStreak = 0, diffs = ['medium', 'hard', 'expert'];
+    for (var i = 0; i < diffs.length; i++) { var ds = s.byDifficulty[diffs[i]]; if (Math.abs(ds.currentStreak) > Math.abs(overallStreak)) overallStreak = ds.currentStreak; }
+    document.getElementById('stat-streak').textContent = overallStreak > 0 ? overallStreak + 'W' : overallStreak < 0 ? Math.abs(overallStreak) + 'L' : '0';
+    var diffDisplayLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+    for (var di = 0; di < diffs.length; di++) {
+      var diff = diffs[di], d = s.byDifficulty[diff], container = document.getElementById('stats-' + diff + '-content');
+      if (d.games === 0) { container.innerHTML = '<div class="stat-row"><span class="label">Ch\u01B0a có d\u1EEF li\u1EC7u</span></div>'; continue; }
+      var html = '';
+      html += statRow('Ván', '' + d.games);
+      html += statRow('Th\u1EAFng', (d.winRate * 100).toFixed(0) + '% (' + d.wins + '/' + d.games + ')');
+      html += statRow('Streak', (d.currentStreak > 0 ? d.currentStreak + 'W' : d.currentStreak < 0 ? Math.abs(d.currentStreak) + 'L' : '0') + ' | Best: ' + d.bestStreak + 'W');
+      html += statRow('Accuracy', (d.avgAccuracy * 100).toFixed(0) + '%');
+      html += statRow('Liar \u0111úng', (d.avgLiarCorrect * 100).toFixed(0) + '%');
+      html += statRow('\u0110oán l\u1EA1i', (d.avgRetakeRate * 100).toFixed(0) + '%');
+      if (d._bluffFaces && Object.keys(d._bluffFaces).length > 0) html += statRow('Hay bluff', 'm\u1EB7t ' + d.mostBluffedFace);
+      html += '<div class="trend-bar">'; for (var ti = 0; ti < 10; ti++) { if (ti < d.last10.length) html += '<div class="bar ' + (d.last10[ti] === 'W' ? 'bar-win' : 'bar-lose') + '"></div>'; else html += '<div class="bar bar-empty"></div>'; } html += '</div>';
+      html += '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">10 ván g\u1EA7n nh\u1EA5t: ' + (d.last10WinRate * 100).toFixed(0) + '% ' + d.trendDirection + '</div>';
+      if (d.last10.length >= 5 && d.last10WinRate >= 0.7) { var nextLevel = { medium: 'Medium', hard: 'Hard', expert: null }; if (nextLevel[diff]) html += '<div class="level-up-hint">\uD83D\uDE80 B\u1EA1n \u0111ã s\u1EB5n sàng th\u1EED c\u1EA5p ' + nextLevel[diff] + '!</div>'; else html += '<div class="level-up-hint">\uD83C\uDFC6 B\u1EA1n \u0111ã là b\u1EADc th\u1EA7y!</div>'; }
+      container.innerHTML = html;
+    }
+  }
+
+  function statRow(label, value) { return '<div class="stat-row"><span class="label">' + label + '</span><span>' + value + '</span></div>'; }
+
+  function startGame() {
+    var diff = state.selectedDifficulty;
+    // Try to save any unsaved key from input before checking
+    var inputVal = document.getElementById('apiKeyInput').value.trim();
+    if (inputVal && !localStorage.getItem('superliar_apikey')) {
+      localStorage.setItem('superliar_apikey', inputVal);
+      document.getElementById('apiKeySection').style.display = 'none';
+      document.getElementById('apiKeySaved').style.display = 'block';
+    }
+    if ((diff === 'hard' || diff === 'expert') && !getApiKey()) { alert('Vui lòng nh\u1EADp Gemini API Key \u0111\u1EC3 ch\u01A1i \u1EDF c\u1EA5p \u0111\u1ED9 này.'); return; }
+    state.game = {
+      players: [ { name: 'B\u1EA1n', dice: rollDice(), isHuman: true }, { name: 'An Nhi\u00EAn', dice: rollDice(), isHuman: false } ],
+      currentBid: null, currentPlayerIndex: Math.random() < 0.5 ? 0 : 1, phase: 'bidding', history: [], difficulty: diff, turnCounter: 0, retakesThisTurn: 0
+    };
+    pendingAction = null;
+    document.getElementById('aiSpeech').style.display = 'none';
+    showScreen('screen-game');
+    showShakeScreen();
+  }
+
+  function initApp() {
+    var savedKey = localStorage.getItem('superliar_apikey');
+    var apiKeyInput = document.getElementById('apiKeyInput');
+    var apiKeySection = document.getElementById('apiKeySection');
+    var apiKeySaved = document.getElementById('apiKeySaved');
+
+    function saveApiKey() {
+      var val = apiKeyInput.value.trim();
+      if (val) {
+        localStorage.setItem('superliar_apikey', val);
+        apiKeySection.style.display = 'none';
+        apiKeySaved.style.display = 'block';
+      }
+    }
+
+    if (savedKey) {
+      apiKeyInput.value = savedKey;
+      apiKeySection.style.display = 'none';
+      apiKeySaved.style.display = 'block';
+    }
+
+    // Save button click
+    document.getElementById('btnSaveKey').addEventListener('click', saveApiKey);
+    // Also save on Enter key
+    apiKeyInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); } });
+    // Also save on blur (leaving the input)
+    apiKeyInput.addEventListener('blur', function() { if (apiKeyInput.value.trim()) saveApiKey(); });
+
+    document.getElementById('btnEditApiKey').addEventListener('click', function() {
+      apiKeySection.style.display = 'block';
+      apiKeySaved.style.display = 'none';
+      apiKeyInput.value = localStorage.getItem('superliar_apikey') || '';
+      apiKeyInput.focus();
+    });
+    var diffCards = document.querySelectorAll('.diff-card');
+    for (var i = 0; i < diffCards.length; i++) { diffCards[i].addEventListener('click', function() { for (var j = 0; j < diffCards.length; j++) diffCards[j].classList.remove('selected'); this.classList.add('selected'); state.selectedDifficulty = this.dataset.diff; }); }
+    document.getElementById('btnStart').addEventListener('click', startGame);
+    document.getElementById('btnQuit').addEventListener('click', function() { if (confirm('Thoát ván hi\u1EC7n t\u1EA1i?')) { renderStats(); showScreen('screen-home'); } });
+    document.getElementById('btnBid').addEventListener('click', handlePlayerBid);
+    document.getElementById('btnLiar').addEventListener('click', handlePlayerLiar);
+    document.getElementById('btnRetake').addEventListener('click', handleRetake);
+    document.getElementById('btnConfirm').addEventListener('click', handleConfirm);
+    document.getElementById('chkChay').addEventListener('change', function() {
+      if (this.checked && state.game && state.game.currentBid && state.game.currentBid.isChay) {
+        var reqQty = state.game.currentBid.quantity * 2;
+        var scroll = document.getElementById('wheelQuantity');
+        scroll.scrollTop = (Math.max(reqQty, 3) - 3) * 40;
+      }
+    });
+    document.getElementById('diceCup').addEventListener('click', handleCupTap);
+    document.getElementById('btnStartBidding').addEventListener('click', handleStartBidding);
+    var tabs = document.querySelectorAll('.analysis-tab');
+    for (var ti = 0; ti < tabs.length; ti++) { tabs[ti].addEventListener('click', function() { for (var tj = 0; tj < tabs.length; tj++) tabs[tj].classList.remove('active'); var contents = document.querySelectorAll('.analysis-content'); for (var ck = 0; ck < contents.length; ck++) contents[ck].classList.remove('active'); this.classList.add('active'); document.getElementById('tab-' + this.dataset.tab).classList.add('active'); }); }
+    document.getElementById('btnPlayAgain').addEventListener('click', startGame);
+    document.getElementById('btnGoHome').addEventListener('click', function() { renderStats(); showScreen('screen-home'); });
+    document.getElementById('btnShowAnalysis').addEventListener('click', function() { showScreen('screen-analysis'); });
+    document.getElementById('btnPlayAgainReveal').addEventListener('click', startGame);
+    document.getElementById('btnExportHistory').addEventListener('click', exportHistoryAsMd);
+    renderStats();
+  }
+
+  document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
