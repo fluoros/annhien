@@ -685,7 +685,7 @@
         <div class="diff-card" data-diff="expert"><h3>Hard</h3><p>Gemini Pro</p></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0;">
-        <label class="toggle-label" for="chkCoachMode" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;">
+        <label class="toggle-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;">
           <input type="checkbox" id="chkCoachMode" style="display:none;">
           <span class="toggle-track" id="coachToggleTrack" style="width:44px;height:24px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;position:relative;flex-shrink:0;transition:background 0.2s;">
             <span style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text-muted);border-radius:50%;transition:all 0.2s;" id="coachToggleThumb"></span>
@@ -2058,6 +2058,11 @@
     };
     pendingAction = null;
     document.getElementById('aiSpeech').style.display = 'none';
+    // Update badge immediately so it's correct during shake screen
+    var badgeEl = document.getElementById('gameDiffBadge');
+    var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+    badgeEl.textContent = diffLabels[diff];
+    badgeEl.className = 'difficulty-badge badge-' + diff;
     showScreen('screen-game');
     showShakeScreen();
   }
