@@ -298,6 +298,8 @@
     .analysis-tabs {
       display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border);
       overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg-primary); padding-top: 4px;
     }
     .analysis-tabs::-webkit-scrollbar { display: none; }
     .analysis-tab {
@@ -682,7 +684,17 @@
         <div class="diff-card selected" data-diff="hard"><span class="recommend-badge">N&#234;n ch&#7885;n</span><h3>Medium</h3><p>Gemini Flash Lite</p></div>
         <div class="diff-card" data-diff="expert"><h3>Hard</h3><p>Gemini Pro</p></div>
       </div>
-      <div class="start-btn-wrap" style="margin-top:16px;margin-bottom:24px;"><button class="btn btn-primary" id="btnStart" style="padding:16px 56px;font-size:20px;border-radius:var(--radius);width:100%;max-width:320px;">Ch&#417;i</button></div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0;">
+        <label class="toggle-label" for="chkCoachMode" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;">
+          <input type="checkbox" id="chkCoachMode" style="display:none;">
+          <span class="toggle-track" id="coachToggleTrack" style="width:44px;height:24px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;position:relative;flex-shrink:0;transition:background 0.2s;">
+            <span style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text-muted);border-radius:50%;transition:all 0.2s;" id="coachToggleThumb"></span>
+          </span>
+          <span style="font-size:14px;color:var(--text-secondary);">Chế độ Coach</span>
+        </label>
+        <span id="coachModeStatus" style="font-size:12px;color:var(--text-muted);">Tắt</span>
+      </div>
+      <div class="start-btn-wrap" style="margin-top:8px;margin-bottom:24px;"><button class="btn btn-primary" id="btnStart" style="padding:16px 56px;font-size:20px;border-radius:var(--radius);width:100%;max-width:320px;">Ch&#417;i</button></div>
       <div id="stats-dashboard">
         <div class="stats-overview">
           <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">T&#7893;ng ván</div></div>
@@ -717,7 +729,7 @@
       <div id="gameContent">
       <div class="dice-area">
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
-          <div class="ai-avatar ai-avatar-sm"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
+          <div class="ai-avatar ai-avatar-sm"><img src="Annhienavatar.png" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
           <span class="label" style="margin-bottom:0;color:#f48fb1;">An Nhi&#234;n</span>
         </div>
         <div class="dice-row" id="aiDice"></div>
@@ -726,7 +738,7 @@
       <div id="lastBidDisplay" class="last-bid-display"></div>
       <div id="aiThinking" style="display:none;">
         <div class="ai-thinking-wrap">
-          <div class="ai-avatar"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
+          <div class="ai-avatar"><img src="Annhienavatar.png" alt="AN" style="display:block"><div class="ai-avatar-placeholder" style="display:none">AN</div></div>
           <div class="ai-thinking-bubble">
             <div class="typing-dots"><span></span><span></span><span></span></div>
             <span>&#273;ang ngh&#297;...</span>
@@ -1078,8 +1090,8 @@
     return binomialProbability(totalDiceOnTable - myDice.length, Math.max(0, bid.quantity - myCount), p);
   }
 
-  var AVATAR_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23f8bbd0'/%3E%3Cellipse cx='30' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='70' cy='25' rx='18' ry='22' fill='%238d6e63'/%3E%3Cellipse cx='30' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Cellipse cx='70' cy='25' rx='14' ry='18' fill='%23a1887f'/%3E%3Ccircle cx='50' cy='52' r='30' fill='%238d6e63'/%3E%3Ccircle cx='50' cy='52' r='26' fill='%23a1887f'/%3E%3Ccircle cx='38' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='62' cy='46' r='5' fill='%23333'/%3E%3Ccircle cx='39.5' cy='44.5' r='1.8' fill='white'/%3E%3Ccircle cx='63.5' cy='44.5' r='1.8' fill='white'/%3E%3Cellipse cx='50' cy='56' rx='6' ry='4' fill='%23333'/%3E%3Cellipse cx='50' cy='55' rx='3' ry='1.5' fill='%23e88'/%3E%3Cpath d='M42 62 Q50 70 58 62' stroke='%23333' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='85' r='12' fill='%238d6e63'/%3E%3Ccircle cx='38' cy='82' r='8' fill='%238d6e63'/%3E%3Ccircle cx='62' cy='82' r='8' fill='%238d6e63'/%3E%3C/svg%3E";
-  var state = { game: null, selectedDifficulty: 'hard', stats: loadStats(), gameCounter: 0 };
+  var AVATAR_SVG = "Annhienavatar.png";
+  var state = { game: null, selectedDifficulty: 'hard', stats: loadStats(), gameCounter: 0, coachMode: localStorage.getItem('superliar_coach') === '1' };
   loadGameCounter().then(function(c) { state.gameCounter = c; }).catch(function() { state.gameCounter = 0; });
 
   function loadStats() { var s = localStorage.getItem('superliar_stats'); if (s) { try { return JSON.parse(s); } catch(e) { return createEmptyStats(); } } return createEmptyStats(); }
@@ -1087,7 +1099,13 @@
   function emptyDiffStats() { return { games: 0, wins: 0, losses: 0, winRate: 0, currentStreak: 0, bestStreak: 0, avgAccuracy: 0, avgLiarCorrect: 0, avgRetakeRate: 0, mostBluffedFace: 2, last10: [], last10WinRate: 0, trendDirection: '->', _accuracyHistory: [], _liarHistory: [], _retakeHistory: [], _bluffFaces: {} }; }
   function saveStats() { localStorage.setItem('superliar_stats', JSON.stringify(state.stats)); }
 
-  function showScreen(screenId) { var screens = document.querySelectorAll('.screen'); for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active'); document.getElementById(screenId).classList.add('active'); }
+  function showScreen(screenId) {
+    var screens = document.querySelectorAll('.screen');
+    for (var i = 0; i < screens.length; i++) screens[i].classList.remove('active');
+    document.getElementById(screenId).classList.add('active');
+    var app = document.getElementById('app');
+    if (app) app.scrollTop = 0;
+  }
   function getApiKey() { return localStorage.getItem('superliar_apikey') || document.getElementById('apiKeyInput').value.trim() || ''; }
 
   // ==================== SVG DICE ====================
@@ -1251,6 +1269,7 @@
     var probability = calculateProbability(g.players[0].dice, newBid, allDiceCount, isChay);
     pendingAction = { action: 'bid', bid: newBid, probability: probability };
     document.getElementById('bidControls').style.display = 'none';
+    if (!state.coachMode) { handleConfirm(); return; }
     showCoachFeedback(pendingAction);
   }
 
@@ -1260,6 +1279,7 @@
     var probability = calculateProbability(g.players[0].dice, g.currentBid, allDiceCount, g.currentBid.isChay);
     pendingAction = { action: 'liar', bid: null, probability: 1 - probability };
     document.getElementById('bidControls').style.display = 'none';
+    if (!state.coachMode) { handleConfirm(); return; }
     showCoachFeedback(pendingAction);
   }
 
@@ -1281,42 +1301,70 @@
     await doAiTurn();
   }
 
-  async function callGemini(prompt, model) {
-    if (!model) model = 'gemini-3.1-pro-preview';
+  function robustParseJSON(text) {
+    // Step 1: strip markdown fences and control chars
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
+    text = text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' ');
+    text = text.trim();
+    // Step 2: try direct parse
+    try { return JSON.parse(text); } catch (e0) {}
+    // Step 3: extract outermost JSON object/array
+    var start = text.search(/[\[{]/);
+    if (start === -1) throw new Error('No JSON found');
+    var open = text[start], close = open === '{' ? '}' : ']';
+    var depth = 0, inStr = false, escape = false, end = -1;
+    for (var i = start; i < text.length; i++) {
+      var c = text[i];
+      if (escape) { escape = false; continue; }
+      if (c === '\\' && inStr) { escape = true; continue; }
+      if (c === '"') { inStr = !inStr; continue; }
+      if (!inStr) {
+        if (c === open) depth++;
+        else if (c === close) { depth--; if (depth === 0) { end = i; break; } }
+      }
+    }
+    var extracted = end !== -1 ? text.slice(start, end + 1) : text.slice(start);
+    // Step 4: sanitize common issues
+    // Replace literal newlines inside strings with space
+    var fixed = '';
+    var inString = false, esc = false;
+    for (var j = 0; j < extracted.length; j++) {
+      var ch = extracted[j];
+      if (esc) { fixed += ch; esc = false; continue; }
+      if (ch === '\\' && inString) { fixed += ch; esc = true; continue; }
+      if (ch === '"') { inString = !inString; fixed += ch; continue; }
+      if (inString && (ch === '\n' || ch === '\r')) { fixed += ' '; continue; }
+      fixed += ch;
+    }
+    // Remove trailing commas before ] or }
+    fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+    try { return JSON.parse(fixed); } catch (e1) {
+      // Step 5: aggressive fallback — strip any char that breaks JSON between quotes
+      try { return JSON.parse(fixed.replace(/[\u0000-\u001F]+/g, ' ')); } catch (e2) {
+        throw new Error('JSON parse failed: ' + e1.message);
+      }
+    }
+  }
+
+  async function callGemini(prompt, model, maxTokens) {
+    if (!model) model = 'gemini-2.0-flash';
+    if (!maxTokens) maxTokens = 600;
     var apiKey = getApiKey(); if (!apiKey) throw new Error('No API key');
     var response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 2048, responseMimeType: 'application/json' } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: maxTokens, responseMimeType: 'application/json' } })
     });
     if (!response.ok) { var err = await response.text(); throw new Error('Gemini API error: ' + response.status + ' - ' + err); }
     var data = await response.json();
     var text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
-    if (!text) throw new Error('Empty Gemini response');
-    // Clean up common Gemini JSON issues
-    text = text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, ' '); // strip control chars
-    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, ''); // strip markdown fences
-    try { return JSON.parse(text); } catch (e1) {
-      var jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) jsonMatch = text.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        var cleaned = jsonMatch[0];
-        // Fix common issues: trailing commas before } or ]
-        cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
-        // Fix unescaped newlines inside strings (replace literal newlines with spaces)
-        cleaned = cleaned.replace(/\n/g, ' ');
-        try { return JSON.parse(cleaned); } catch (e2) {
-          // Last resort: try to fix unterminated strings by closing them
-          cleaned = cleaned.replace(/"([^"]*?)(\n|$)/g, function(match, p1, p2) {
-            if (p1.endsWith('\\')) return match;
-            return '"' + p1 + '"' + p2;
-          });
-          cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
-          try { return JSON.parse(cleaned); } catch (e3) {
-            throw new Error('Failed to parse JSON from Gemini response');
-          }
-        }
-      }
-      throw new Error('No valid JSON found in Gemini response');
+    if (!text) {
+      // Check for finish reason
+      var finishReason = data.candidates && data.candidates[0] && data.candidates[0].finishReason;
+      throw new Error('Empty Gemini response' + (finishReason ? ' (' + finishReason + ')' : ''));
+    }
+    try { return robustParseJSON(text); } catch (e1) {
+      console.warn('JSON parse failed, raw:', text.slice(0, 200));
+      throw new Error('Failed to parse JSON: ' + e1.message);
     }
   }
 
@@ -1646,12 +1694,12 @@
   }
 
   async function aiHard(g) {
-    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'hard'), 'gemini-3.1-flash-lite-preview'), g); }
+    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'hard'), 'gemini-2.0-flash-lite', 300), g); }
     catch (err) { console.warn('Hard AI Gemini failed:', err); return aiMediumNoNoise(g); }
   }
 
   async function aiExpert(g) {
-    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'expert'), 'gemini-3.1-pro-preview'), g); }
+    try { return validateAiResponse(await callGemini(buildAiPrompt(g, 'expert'), 'gemini-2.0-flash', 300), g); }
     catch (err) { console.warn('Expert AI Gemini failed:', err); try { return await aiHard(g); } catch (err2) { return aiMediumNoNoise(g); } }
   }
 
@@ -1725,17 +1773,27 @@
     document.getElementById('coachIcon').textContent = icons[rating];
     document.getElementById('coachRating').textContent = labels[rating];
     document.getElementById('coachProb').textContent = '(' + (probability * 100).toFixed(0) + '%)';
-    document.getElementById('coachBody').innerHTML = localExplanation;
-    panel.className = 'card coach-panel visible rating-' + rating;
     pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: localExplanation, reasoning: localExplanation };
+
+    // Show panel once: spinner if API key available, otherwise show local immediately
     if (getApiKey()) {
+      document.getElementById('coachBody').innerHTML = '<div class="ai-thinking" style="padding:4px 0;"><div class="spinner"></div><span style="font-size:13px;">Đang phân tích...</span></div>';
+      panel.className = 'card coach-panel visible rating-' + rating;
       try {
         var geminiCoach = await getGeminiCoachFeedback(g, action, probability, localExplanation);
         if (geminiCoach && geminiCoach.whyGoodOrBad) {
           document.getElementById('coachBody').innerHTML = geminiCoach.whyGoodOrBad + (geminiCoach.betterMove ? '<div class="suggestion">\uD83D\uDCA1 G\u1EE3i ý: ' + geminiCoach.betterMove + '</div>' : '');
           pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: geminiCoach.whyGoodOrBad, betterMove: geminiCoach.betterMove, reasoning: geminiCoach.reasoning || localExplanation };
+        } else {
+          document.getElementById('coachBody').innerHTML = localExplanation;
         }
-      } catch (err) { console.warn('Coach Gemini failed:', err); }
+      } catch (err) {
+        console.warn('Coach Gemini failed:', err);
+        document.getElementById('coachBody').innerHTML = localExplanation;
+      }
+    } else {
+      document.getElementById('coachBody').innerHTML = localExplanation;
+      panel.className = 'card coach-panel visible rating-' + rating;
     }
   }
 
@@ -1744,7 +1802,7 @@
     var actionText = action.action === 'liar' ? 'goi LIAR tren loi doan "' + g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' chay' : '') + '"' : 'doan "' + action.bid.quantity + ' con so ' + action.bid.faceValue + (action.bid.isChay ? ' chay' : '') + '"';
     var currentBidText = g.currentBid ? g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' (chay)' : '') : 'chua co';
     var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep. Danh gia nuoc di cua nguoi choi.\n\nTINH HUONG:\n- Xuc xac nguoi choi: [' + myDice.join(', ') + ']\n- Tong 10 con tren ban (5 an cua doi thu)\n- So 1 la wild (tru khi choi chay)\n- Loi doan hien tai tren ban: ' + currentBidText + '\n- Nguoi choi vua ' + actionText + '\n- Xac suat: ' + (probability * 100).toFixed(1) + '%\n- Context: ' + localContext + '\n\nQUAN TRONG: Dua ra goi y CHIEN LUOC cu the, khong chi giai thich tinh huong. Vi du:\n- "Nen tang nhe so mat de giu an toan va doc pattern doi thu"\n- "Day la luc nen bluff vi doi thu da tang lien tuc, co the ho dang can"\n- "Nen goi Liar vi xac suat qua thap, giu bai cho luot sau"\n- "Choi chay o day rat manh vi ban co 3 con so X"\nLuon goi y 1 nuoc di cu the tot hon (neu co).\n\nTra ve JSON:\n{\n  "whyGoodOrBad": "<giai thich TAI SAO nuoc di nay tot/te, 2-3 cau, tieng Viet>",\n  "betterMove": "<goi y nuoc di tot hon neu co, null neu nuoc di da tot>",\n  "reasoning": "<logic chi tiet>"\n}';
-    return callGemini(prompt, 'gemini-3.1-pro-preview');
+    return callGemini(prompt, 'gemini-2.0-flash', 400);
   }
 
   function doReveal() {
@@ -1926,7 +1984,7 @@
       + 'Viet tieng Viet. Giu cau ngan gon (moi cau duoi 50 tu). Tra ve JSON:\n'
       + '{"summary":"tom tat 2 cau","keyMistakes":[{"turn":1,"whatYouDid":"mo ta","whatShouldDo":"goi y","whyItMatters":"ly do"}],"goodDecisions":[{"turn":1,"whatYouDid":"mo ta","whyItWasGood":"ly do"}],"anNhienStrategy":[{"turn":1,"whatSheDid":"mo ta","whySmart":"giai thich","whatToLearn":"bai hoc"}],"patterns":"xu huong","lessonLearned":"bai hoc chinh","actionableTip":"1 meo cu the"}\n\n'
       + 'Luu y: anNhienStrategy la phan QUAN TRONG NHAT. Phan tich tu goc nhin chien luoc gia: khi nao bluff, khi nao goi liar, doc pattern doi thu, tinh xac suat, ap luc tam ly. Day nguoi choi tu duy nhu cao thu.';
-    return callGemini(prompt, 'gemini-3.1-pro-preview');
+    return callGemini(prompt, 'gemini-2.0-flash', 1200);
   }
 
   function updateStats(report, g) {
@@ -2038,6 +2096,25 @@
       apiKeyInput.value = localStorage.getItem('superliar_apikey') || '';
       apiKeyInput.focus();
     });
+    // Coach mode toggle
+    var coachChk = document.getElementById('chkCoachMode');
+    var coachThumb = document.getElementById('coachToggleThumb');
+    var coachTrack = document.getElementById('coachToggleTrack');
+    var coachStatus = document.getElementById('coachModeStatus');
+    function applyCoachToggle(on) {
+      state.coachMode = on;
+      localStorage.setItem('superliar_coach', on ? '1' : '0');
+      coachThumb.style.left = on ? '23px' : '3px';
+      coachThumb.style.background = on ? '#000' : 'var(--text-muted)';
+      coachTrack.style.background = on ? 'var(--accent)' : 'var(--bg-secondary)';
+      coachStatus.textContent = on ? 'Bật' : 'Tắt';
+      coachStatus.style.color = on ? 'var(--accent)' : 'var(--text-muted)';
+    }
+    applyCoachToggle(state.coachMode);
+    document.querySelector('.toggle-label').addEventListener('click', function() {
+      applyCoachToggle(!state.coachMode);
+    });
+
     var diffCards = document.querySelectorAll('.diff-card');
     for (var i = 0; i < diffCards.length; i++) { diffCards[i].addEventListener('click', function() { for (var j = 0; j < diffCards.length; j++) diffCards[j].classList.remove('selected'); this.classList.add('selected'); state.selectedDifficulty = this.dataset.diff; }); }
     document.getElementById('btnStart').addEventListener('click', startGame);

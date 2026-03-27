@@ -1,4 +1,4 @@
-const CACHE = 'annhien-v1';
+const CACHE = 'annhien-v2';
 const ASSETS = [
   '/annhien/',
   '/annhien/index.html',
