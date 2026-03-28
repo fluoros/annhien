@@ -625,6 +625,36 @@
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-size: 15px; font-weight: 600; cursor: pointer;
     }
+
+    /* Strategy cards */
+    .strat-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      margin-bottom: 8px; overflow: hidden;
+    }
+    .strat-card-header {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .strat-card-header .strat-icon { font-size: 22px; flex-shrink: 0; }
+    .strat-card-header .strat-name { font-weight: 700; font-size: 14px; flex: 1; }
+    .strat-card-header .strat-arrow { color: var(--text-muted); font-size: 12px; transition: transform 0.2s; }
+    .strat-card-header .strat-arrow.open { transform: rotate(180deg); }
+    .strat-card-body {
+      display: none; padding: 0 14px 14px; font-size: 13px; line-height: 1.7; color: var(--text-secondary);
+    }
+    .strat-card-body.open { display: block; }
+    .strat-card-body .strat-section { margin-bottom: 8px; }
+    .strat-card-body .strat-label { color: var(--text-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .strat-card-body .strat-example {
+      background: var(--bg-secondary); border-radius: var(--radius-sm);
+      padding: 8px 10px; margin-top: 4px; font-size: 12px; line-height: 1.6;
+      border-left: 3px solid var(--accent);
+    }
+    .strat-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 16px; padding: 4px 10px; font-size: 12px; font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -705,6 +735,14 @@
           <div class="card stats-card" id="stats-hard"><h4>Medium</h4><div id="stats-hard-content"><div class="stat-row"><span class="label">Ch&#432;a có d&#7919; li&#7879;u</span></div></div></div>
           <div class="card stats-card" id="stats-expert"><h4>Hard</h4><div id="stats-expert-content"><div class="stat-row"><span class="label">Ch&#432;a có d&#7919; li&#7879;u</span></div></div></div>
         </div>
+      </div>
+      <!-- Strategy Guide -->
+      <div style="margin-top:20px;">
+        <div id="stratGuideToggle" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);-webkit-tap-highlight-color:transparent;">
+          <span style="font-size:15px;font-weight:700;color:var(--text-primary);">&#128218; Cẩm nang chiến lược</span>
+          <span id="stratGuideArrow" style="font-size:14px;color:var(--text-muted);transition:transform 0.2s;">&#9660;</span>
+        </div>
+        <div id="stratGuideContent" style="display:none;margin-top:8px;"></div>
       </div>
       <div style="text-align:center;margin-top:12px;"><button class="btn btn-ghost" id="btnExportHistory" style="font-size:13px;">&#128230; Xu&#7845;t l&#7883;ch s&#7917;</button></div>
     </div>
@@ -831,11 +869,13 @@
     <div id="screen-analysis" class="screen">
       <div class="analysis-tabs">
         <button class="analysis-tab active" data-tab="result">K&#7871;t qu&#7843;</button>
-        <button class="analysis-tab" data-tab="turns">Phân tích t&#7915;ng l&#432;&#7907;t</button>
+        <button class="analysis-tab" data-tab="turns">T&#7915;ng l&#432;&#7907;t</button>
+        <button class="analysis-tab" data-tab="strategy">Chi&#7871;n l&#432;&#7907;c</button>
         <button class="analysis-tab" data-tab="lessons">Bài h&#7885;c</button>
       </div>
       <div id="tab-result" class="analysis-content active"><div class="report-grid" id="reportGrid"></div></div>
       <div id="tab-turns" class="analysis-content"><div class="turn-timeline" id="turnTimeline"></div></div>
+      <div id="tab-strategy" class="analysis-content"><div id="strategyContent"></div></div>
       <div id="tab-lessons" class="analysis-content"><div id="lessonsContent"><div class="ai-thinking"><div class="spinner"></div><span>&#272;ang phân tích v&#7899;i Gemini...</span></div></div></div>
       <div style="display:flex;gap:12px;margin-top:24px;">
         <button class="btn btn-primary" id="btnPlayAgain">Ch&#417;i l&#7841;i</button>
@@ -1764,6 +1804,59 @@
     songSat:   { name: 'Song Sát',    icon: '\u2694\uFE0F', desc: 'Nửa thật nửa bluff — có 1-2 con, kêu 3-4', counter: 'Phổ biến nhất. Đếm dice mình + ước lượng' }
   };
 
+  var STRAT_DETAILS = {
+    leoChac: {
+      when: 'Khi bạn có bài trung bình và muốn thăm dò đối thủ. An toàn nhất ở đầu ván.',
+      example: 'Bạn có [2,3,3,5,1]. Lượt 1: kêu 3x3. Lượt 3: tăng lên 4x3. Tăng từ từ để đọc phản ứng đối thủ.',
+      psychology: 'Đối thủ khó đoán bạn bluff hay thật vì mỗi lần chỉ tăng 1. Nhưng nếu đối thủ nhận ra pattern → dễ bị gọi Liar ở lượt cuối.'
+    },
+    baoLua: {
+      when: 'Khi muốn kết thúc nhanh hoặc ép đối thủ gọi Liar khi bạn có bài mạnh.',
+      example: 'An Nhiên kêu 3x5. Bạn nhảy lên 6x5! Đối thủ bị shock, phải quyết định ngay: theo hay gọi Liar.',
+      psychology: 'Gây áp lực tâm lý cực lớn. Đối thủ thường panic và gọi Liar — lợi nếu bạn thật sự có bài. Rủi ro nếu bluff.'
+    },
+    maGuong: {
+      when: 'Khi đối thủ kêu mặt số bạn cũng có. Theo cùng mặt số, chỉ tăng lượng.',
+      example: 'An Nhiên: 3x4. Bạn cũng có 2 con số 4 → kêu 4x4. Cả hai đều đi cùng hướng.',
+      psychology: 'Truyền tín hiệu "tôi cũng có mặt này". Đối thủ tin tổng số cao → tiếp tục tăng. Nguy hiểm nếu đối thủ đang bluff.'
+    },
+    doiMat: {
+      when: 'Khi muốn phá rhythm đối thủ hoặc chuyển sang bài mạnh hơn.',
+      example: 'Đang kêu số 3, bạn đột ngột đổi sang 4x5 vì bạn có 3 con số 5.',
+      psychology: 'Đối thủ mất dấu — không biết bạn đang bluff hay chuyển bài thật. Hiệu quả nhất khi đối thủ đang tự tin.'
+    },
+    bayGia: {
+      when: 'Khi bạn có bài cực mạnh (3-4 con cùng mặt). Đi nhẹ để đối thủ tự tăng.',
+      example: 'Có [4,4,4,1,6] = 4 con số 4! Nhưng chỉ kêu 3x4 nhẹ nhàng. Đợi đối thủ tăng, rồi theo.',
+      psychology: 'Đối thủ thấy bạn đi nhẹ → nghĩ bạn yếu → tăng mạnh → đến lúc gọi Liar thì thực tế bạn có đủ.'
+    },
+    luaLanh: {
+      when: 'Bluff thuần túy — kêu mặt bạn KHÔNG có. Rủi ro cao, thưởng cao.',
+      example: 'Có [2,2,5,5,1] nhưng kêu 3x6. Hoàn toàn bluff. Hy vọng đối thủ có số 6 hoặc wild.',
+      psychology: 'Đối thủ không thể đọc bài vì hành vi không match dice. Nhưng nếu bị gọi Liar → thua chắc.'
+    },
+    neoDon: {
+      when: 'Mở đầu ván với bid cao bất ngờ để neo tâm lý đối thủ.',
+      example: 'Mở màn: 5x3! Đối thủ bị neo ở mức 5, mọi tính toán sau đều xoay quanh con số đó.',
+      psychology: 'Hiệu ứng neo (anchoring bias): con số đầu tiên ảnh hưởng toàn bộ ván. Đối thủ khó thoát khỏi neo.'
+    },
+    doiKhi: {
+      when: 'Khi đối thủ đang đọc bài bạn quá giỏi. Chơi random để trở nên bí ẩn.',
+      example: 'Ván 1: leo chắc. Ván 2: bão lửa. Ván 3: lừa lạnh. Không có pattern.',
+      psychology: 'Đối thủ không thể xây dựng model về bạn → phải dựa vào xác suất thuần, mất lợi thế reading.'
+    },
+    goiHan: {
+      when: 'Đặt bid ở mức VỪA ĐỦ khó để ép đối thủ vào thế kẹt.',
+      example: 'Biết đối thủ yếu số 5. Kêu 4x5 — đủ cao để khó theo, đủ thấp để bạn an toàn nếu bị gọi Liar.',
+      psychology: 'Forcing play: đối thủ chỉ có 2 lựa chọn tệ — theo (rủi ro) hoặc gọi Liar (bạn có bài).'
+    },
+    songSat: {
+      when: 'Phổ biến nhất! Có 1-2 con, kêu nhiều hơn thực tế. Dựa vào wild + dice đối thủ.',
+      example: 'Có 1 con số 4 + 1 wild = 2 con. Kêu 4x4 — cần An Nhiên có 2 con nữa. Xác suất ~50%.',
+      psychology: 'Semi-bluff: không phải bluff thuần, có nền tảng thật. An toàn hơn Lừa Lạnh. 70% nước đi trong game là Song Sát.'
+    }
+  };
+
   function detectStrategies(g) {
     var result = { player: [], opponent: [] };
     var playerTurns = g.history.filter(function(h) { return h.player === 'B\u1EA1n' && h.action === 'bid'; });
@@ -1828,6 +1921,95 @@
       if (s) parts.push(s.icon + ' <b>' + s.name + '</b>: ' + s.desc);
     }
     return parts.join('<br>');
+  }
+
+  function renderStrategyGuide() {
+    var container = document.getElementById('stratGuideContent');
+    var keys = Object.keys(STRATEGIES);
+    var html = '';
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i], s = STRATEGIES[k], d = STRAT_DETAILS[k];
+      if (!d) continue;
+      html += '<div class="strat-card" data-strat="' + k + '">'
+        + '<div class="strat-card-header">'
+        + '<span class="strat-icon">' + s.icon + '</span>'
+        + '<span class="strat-name">' + s.name + '</span>'
+        + '<span style="font-size:11px;color:var(--text-muted);margin-right:8px;">' + s.desc + '</span>'
+        + '<span class="strat-arrow">&#9660;</span>'
+        + '</div>'
+        + '<div class="strat-card-body">'
+        + '<div class="strat-section"><div class="strat-label">Khi nào dùng</div><div>' + d.when + '</div></div>'
+        + '<div class="strat-section"><div class="strat-label">Ví dụ thực tế</div><div class="strat-example">' + d.example + '</div></div>'
+        + '<div class="strat-section"><div class="strat-label">Tâm lý</div><div>' + d.psychology + '</div></div>'
+        + '<div class="strat-section"><div class="strat-label">Cách đối phó</div><div style="color:var(--success);">' + s.counter + '</div></div>'
+        + '</div></div>';
+    }
+    container.innerHTML = html;
+    // Toggle individual cards
+    var cards = container.querySelectorAll('.strat-card-header');
+    for (var ci = 0; ci < cards.length; ci++) {
+      cards[ci].addEventListener('click', function() {
+        var body = this.nextElementSibling;
+        var arrow = this.querySelector('.strat-arrow');
+        body.classList.toggle('open');
+        arrow.classList.toggle('open');
+      });
+    }
+  }
+
+  function renderStrategyAnalysis(g) {
+    var container = document.getElementById('strategyContent');
+    var strats = detectStrategies(g);
+    var html = '';
+
+    // Opponent strategies
+    html += '<div class="card" style="padding:16px;margin-bottom:12px;">'
+      + '<h4 style="margin-bottom:12px;color:var(--accent);">' + '\uD83C\uDFAD An Nhi\u00EAn \u0111\u00E3 ch\u01A1i ki\u1EC3u:</h4>';
+    if (strats.opponent.length > 0) {
+      for (var ai = 0; ai < strats.opponent.length; ai++) {
+        var as = STRATEGIES[strats.opponent[ai]], ad = STRAT_DETAILS[strats.opponent[ai]];
+        if (!as) continue;
+        html += '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">'
+          + '<span style="font-size:24px;">' + as.icon + '</span>'
+          + '<div><div style="font-weight:700;">' + as.name + '</div>'
+          + '<div style="font-size:13px;color:var(--text-secondary);">' + as.desc + '</div>';
+        if (ad) html += '<div style="font-size:12px;color:var(--warning);margin-top:4px;">' + ad.psychology + '</div>';
+        html += '</div></div>';
+      }
+    } else {
+      html += '<div style="color:var(--text-muted);font-size:13px;">Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u \u0111\u1EC3 nh\u1EADn di\u1EC7n.</div>';
+    }
+    html += '</div>';
+
+    // Player strategies
+    html += '<div class="card" style="padding:16px;margin-bottom:12px;">'
+      + '<h4 style="margin-bottom:12px;color:var(--success);">' + '\uD83D\uDC64 B\u1EA1n \u0111\u00E3 ch\u01A1i ki\u1EC3u:</h4>';
+    if (strats.player.length > 0) {
+      for (var pi = 0; pi < strats.player.length; pi++) {
+        var ps = STRATEGIES[strats.player[pi]], pd = STRAT_DETAILS[strats.player[pi]];
+        if (!ps) continue;
+        html += '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px;">'
+          + '<span style="font-size:24px;">' + ps.icon + '</span>'
+          + '<div><div style="font-weight:700;">' + ps.name + '</div>'
+          + '<div style="font-size:13px;color:var(--text-secondary);">' + ps.desc + '</div>';
+        if (pd) html += '<div style="font-size:12px;color:var(--accent);margin-top:4px;">' + pd.when + '</div>';
+        html += '</div></div>';
+      }
+    } else {
+      html += '<div style="color:var(--text-muted);font-size:13px;">Ch\u01B0a \u0111\u1EE7 d\u1EEF li\u1EC7u.</div>';
+    }
+    html += '</div>';
+
+    // Tip section
+    html += '<div class="card" style="padding:16px;border-left:3px solid var(--accent);">'
+      + '<h4 style="margin-bottom:8px;">\uD83D\uDCA1 M\u1EB9o \u0111\u1ECDc chi\u1EBFn l\u01B0\u1EE3c</h4>'
+      + '<div style="font-size:13px;color:var(--text-secondary);line-height:1.7;">'
+      + '\u2022 <b>Leo Ch\u1EAFc</b> liên tục cùng mặt? Rất có thể có bài đó thật.<br>'
+      + '\u2022 <b>Đổi Mặt</b> đột ngột? Có thể vừa chuyển sang bài mạnh, hoặc bluff.<br>'
+      + '\u2022 <b>Neo Đòn</b> mở cao? Đừng bị anchoring — tính xác suất lại từ đầu.<br>'
+      + '\u2022 Gặp <b>Đổi Khí</b> (random)? Bỏ qua reading, dựa vào toán thuần.</div></div>';
+
+    container.innerHTML = html;
   }
 
   function readOpponentHand(g) {
@@ -2191,7 +2373,7 @@
     if (liarCalls.length > 0) { var lastHistory = g.history[g.history.length - 1]; if (lastHistory.player === 'B\u1EA1n' && lastHistory.action === 'liar' && !result.bidCorrect) liarCallsCorrectCount = 1; }
     var report = { result: isPlayerWinner ? 'win' : 'lose', difficulty: g.difficulty, totalTurns: g.history.length, myBids: humanBids.length, correctBids: correctBids, riskyBids: riskyBids, retakes: totalRetakes, accuracyRate: accuracyRate, liarCallsTotal: liarCalls.length, liarCallsCorrect: liarCallsCorrectCount };
     g._report = report;
-    renderReportTab(report); renderTurnTimeline(g.history); await renderDeepAnalysis(g, result, report); updateStats(report, g); await saveGameToDB_wrapper(g, result, report);
+    renderReportTab(report); renderTurnTimeline(g.history); renderStrategyAnalysis(g); await renderDeepAnalysis(g, result, report); updateStats(report, g); await saveGameToDB_wrapper(g, result, report);
   }
 
   async function saveGameToDB_wrapper(g, result, report) {
@@ -2325,7 +2507,19 @@
     }
     // Build hand reading for analysis context
     var endReading = readOpponentHand(g);
+    var endStrats = detectStrategies(g);
     var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+
+    // Build strategy labels
+    var endStratText = '';
+    if (endStrats.opponent.length > 0) {
+      var on = []; for (var osi = 0; osi < endStrats.opponent.length; osi++) { var os2 = STRATEGIES[endStrats.opponent[osi]]; if (os2) on.push(os2.name); }
+      endStratText += 'An Nhien da choi kieu: ' + on.join(', ') + '. ';
+    }
+    if (endStrats.player.length > 0) {
+      var pn = []; for (var psi = 0; psi < endStrats.player.length; psi++) { var ps2 = STRATEGIES[endStrats.player[psi]]; if (ps2) pn.push(ps2.name); }
+      endStratText += 'Nguoi choi da choi kieu: ' + pn.join(', ') + '.';
+    }
 
     // Collect coach feedback from history
     var coachNotes = [];
@@ -2354,6 +2548,7 @@
       + '=== DOC BAI DOI THU (suy luan tu lich su bid) ===\n'
       + (endReading.summary || 'Khong co du lieu') + '\n'
       + 'Bai that An Nhien: [' + g.players[1].dice.join(', ') + ']. So sanh de danh gia kha nang doc bai.\n\n'
+      + (endStratText ? '=== CHIEN LUOC DA DUNG ===\n' + endStratText + '\nThu vien: Leo Chac, Bao Lua, Ma Guong, Doi Mat, Bay Gia, Lua Lanh, Neo Don, Doi Khi, Goi Han, Song Sat.\n\n' : '')
       + (coachNotes.length > 0 ? '=== GOI Y COACH TRONG VAN ===\n' + coachNotes.join('\n') + '\n\n' : '')
       + '=== YEU CAU ===\n'
       + 'Viet tieng Viet, ngan gon (moi cau duoi 50 tu). Tra ve JSON:\n'
@@ -2526,6 +2721,18 @@
     document.getElementById('btnShowAnalysis').addEventListener('click', function() { showScreen('screen-analysis'); });
     document.getElementById('btnPlayAgainReveal').addEventListener('click', startGame);
     document.getElementById('btnExportHistory').addEventListener('click', exportHistoryAsMd);
+
+    // Strategy guide toggle
+    renderStrategyGuide();
+    var guideToggle = document.getElementById('stratGuideToggle');
+    var guideContent = document.getElementById('stratGuideContent');
+    var guideArrow = document.getElementById('stratGuideArrow');
+    guideToggle.addEventListener('click', function() {
+      var open = guideContent.style.display === 'block';
+      guideContent.style.display = open ? 'none' : 'block';
+      guideArrow.style.transform = open ? '' : 'rotate(180deg)';
+    });
+
     renderStats();
   }
 
