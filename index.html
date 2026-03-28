@@ -685,13 +685,12 @@
         <div class="diff-card" data-diff="expert"><h3>Hard</h3><p>Gemini Pro</p></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:12px 0;">
-        <label class="toggle-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;">
-          <input type="checkbox" id="chkCoachMode" style="display:none;">
-          <span class="toggle-track" id="coachToggleTrack" style="width:44px;height:24px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;position:relative;flex-shrink:0;transition:background 0.2s;">
-            <span style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text-muted);border-radius:50%;transition:all 0.2s;" id="coachToggleThumb"></span>
-          </span>
+        <div id="coachToggleWrap" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;">
+          <div id="coachToggleTrack" style="width:44px;height:24px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;position:relative;flex-shrink:0;transition:background 0.2s;">
+            <div style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:var(--text-muted);border-radius:50%;transition:all 0.2s;" id="coachToggleThumb"></div>
+          </div>
           <span style="font-size:14px;color:var(--text-secondary);">Chế độ Coach</span>
-        </label>
+        </div>
         <span id="coachModeStatus" style="font-size:12px;color:var(--text-muted);">Tắt</span>
       </div>
       <div class="start-btn-wrap" style="margin-top:8px;margin-bottom:24px;"><button class="btn btn-primary" id="btnStart" style="padding:16px 56px;font-size:20px;border-radius:var(--radius);width:100%;max-width:320px;">Ch&#417;i</button></div>
@@ -2102,7 +2101,6 @@
       apiKeyInput.focus();
     });
     // Coach mode toggle
-    var coachChk = document.getElementById('chkCoachMode');
     var coachThumb = document.getElementById('coachToggleThumb');
     var coachTrack = document.getElementById('coachToggleTrack');
     var coachStatus = document.getElementById('coachModeStatus');
@@ -2116,7 +2114,7 @@
       coachStatus.style.color = on ? 'var(--accent)' : 'var(--text-muted)';
     }
     applyCoachToggle(state.coachMode);
-    document.querySelector('.toggle-label').addEventListener('click', function() {
+    document.getElementById('coachToggleWrap').addEventListener('click', function() {
       applyCoachToggle(!state.coachMode);
     });
 
