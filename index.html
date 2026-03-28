@@ -1750,6 +1750,86 @@
     return { action: 'bid', bid: bid, reasoning: result.reasoning || '', aiAnalysis: { strategy: 'Gemini AI', probability: bProb, diceSummary: ds, thinking: (result.reasoning || 'Gemini quyết \u0111\u1ECBnh') + ' | Xác su\u1EA5t: ' + (bProb * 100).toFixed(0) + '%.' } };
   }
 
+  // ── Strategy Library ────────────────────────────────────────────────────────
+  var STRATEGIES = {
+    leoChac:   { name: 'Leo Chắc',    icon: '\uD83E\uDDF1', desc: 'Tăng từ từ +1, giấu bài mạnh', counter: 'Gọi Liar sớm khi tổng vượt hợp lý' },
+    baoLua:    { name: 'Bão Lửa',     icon: '\uD83D\uDD25', desc: 'Nhảy mạnh số lượng, gây áp lực', counter: 'Bình tĩnh, tính xác suất trước khi theo' },
+    maGuong:   { name: 'Mã Gương',    icon: '\uD83E\uDE9E', desc: 'Bắt chước mặt số bạn, chỉ tăng lượng', counter: 'Đổi mặt số để phá rhythm' },
+    doiMat:    { name: 'Đổi Mặt',     icon: '\uD83C\uDFAD', desc: 'Đột ngột đổi mặt số, gây hoang mang', counter: 'Mặt mới có thể là bài mạnh thật hoặc bluff' },
+    bayGia:    { name: 'Bẫy Giả',     icon: '\uD83E\uDEA4', desc: 'Đi nhẹ dù bài mạnh, chờ đối thủ tự sập', counter: 'Cẩn thận khi đối thủ đi quá nhẹ' },
+    luaLanh:   { name: 'Lừa Lạnh',    icon: '\u2744\uFE0F', desc: 'Bluff hoàn toàn — kêu số không có', counter: 'Đếm dice mình có, nếu mình nhiều → đối thủ ít' },
+    neoDon:    { name: 'Neo Đòn',     icon: '\u2693', desc: 'Mở đầu cao để neo tâm lý', counter: 'Đừng bị neo, tính xác suất độc lập' },
+    doiKhi:    { name: 'Đổi Khí',     icon: '\uD83C\uDF00', desc: 'Chơi random không pattern, khó đọc', counter: 'Dựa vào xác suất thuần, bỏ qua reading' },
+    goiHan:    { name: 'Gọi Hàn',     icon: '\uD83E\uDDE9', desc: 'Đặt bid vừa đủ khó để ép đối thủ', counter: 'Nhận diện bị ép → gọi Liar hoặc đổi hướng' },
+    songSat:   { name: 'Song Sát',    icon: '\u2694\uFE0F', desc: 'Nửa thật nửa bluff — có 1-2 con, kêu 3-4', counter: 'Phổ biến nhất. Đếm dice mình + ước lượng' }
+  };
+
+  function detectStrategies(g) {
+    var result = { player: [], opponent: [] };
+    var playerTurns = g.history.filter(function(h) { return h.player === 'B\u1EA1n' && h.action === 'bid'; });
+    var aiTurns = g.history.filter(function(h) { return h.player !== 'B\u1EA1n' && h.action === 'bid'; });
+    function analyze(turns, myDice) {
+      var tags = [];
+      if (turns.length < 1) return tags;
+      // Leo Chắc: consecutive +1 quantity on same face
+      if (turns.length >= 2) {
+        var allSameFace = true, allPlusOne = true;
+        for (var i = 1; i < turns.length; i++) {
+          if (turns[i].bid.faceValue !== turns[i-1].bid.faceValue) allSameFace = false;
+          if (turns[i].bid.quantity - turns[i-1].bid.quantity !== 1) allPlusOne = false;
+        }
+        if (allSameFace && allPlusOne && turns.length >= 2) tags.push('leoChac');
+      }
+      // Bão Lửa: quantity jump >= 2
+      if (turns.length >= 2) {
+        var last = turns[turns.length - 1], prev = turns[turns.length - 2];
+        if (last.bid.quantity - prev.bid.quantity >= 2) tags.push('baoLua');
+      }
+      // Mã Gương: same face as opponent's last bid
+      var otherTurns = g.history.filter(function(h) { return h.player !== turns[0].player && h.action === 'bid'; });
+      if (turns.length >= 1 && otherTurns.length >= 1) {
+        var myLast = turns[turns.length - 1], theirLast = otherTurns[otherTurns.length - 1];
+        if (myLast.bid.faceValue === theirLast.bid.faceValue) tags.push('maGuong');
+      }
+      // Đổi Mặt: changed face in last 2 turns
+      if (turns.length >= 2) {
+        var t1 = turns[turns.length - 2], t2 = turns[turns.length - 1];
+        if (t1.bid.faceValue !== t2.bid.faceValue) tags.push('doiMat');
+      }
+      // Lừa Lạnh: bidding a face you have 0 of (only for player, since we know dice)
+      if (myDice && turns.length >= 1) {
+        var lastBid = turns[turns.length - 1];
+        var hasAny = false;
+        for (var di = 0; di < myDice.length; di++) {
+          if (myDice[di] === lastBid.bid.faceValue || myDice[di] === 1) { hasAny = true; break; }
+        }
+        if (!hasAny) tags.push('luaLanh');
+      }
+      // Neo Đòn: first bid quantity >= 4
+      if (turns.length >= 1 && turns[0].turn <= 2 && turns[0].bid.quantity >= 4) tags.push('neoDon');
+      // Song Sát: has 1-2 of face but bids 3+
+      if (myDice && turns.length >= 1) {
+        var lb = turns[turns.length - 1];
+        var cnt = countDice(myDice, lb.bid.faceValue, lb.bid.isChay);
+        if (cnt >= 1 && cnt <= 2 && lb.bid.quantity >= cnt + 2) tags.push('songSat');
+      }
+      return tags;
+    }
+    result.player = analyze(playerTurns, g.players[0].dice);
+    result.opponent = analyze(aiTurns, null); // don't pass AI dice — detect from behavior only
+    return result;
+  }
+
+  function formatStrategyTags(tags) {
+    if (!tags || tags.length === 0) return '';
+    var parts = [];
+    for (var i = 0; i < tags.length; i++) {
+      var s = STRATEGIES[tags[i]];
+      if (s) parts.push(s.icon + ' <b>' + s.name + '</b>: ' + s.desc);
+    }
+    return parts.join('<br>');
+  }
+
   function readOpponentHand(g) {
     var aiTurns = g.history.filter(function(h) { return h.player !== 'B\u1EA1n' && h.action === 'bid'; });
     var lines = [];
@@ -1919,6 +1999,25 @@
         + reading.lines.join('<br>') + '</div>';
     }
 
+    // ── Strategy detection ─────────────────────────────────────────────────
+    var strats = detectStrategies(g);
+    var stratHtml = '';
+    if (strats.opponent.length > 0) {
+      stratHtml += '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">'
+        + '<b style="color:var(--warning);">An Nhiên đang chơi:</b><br>' + formatStrategyTags(strats.opponent);
+      // Show counter tips
+      for (var si = 0; si < strats.opponent.length; si++) {
+        var strat = STRATEGIES[strats.opponent[si]];
+        if (strat) stratHtml += '<br><span style="color:var(--success);">Cách đối phó: ' + strat.counter + '</span>';
+      }
+      stratHtml += '</div>';
+    }
+    if (strats.player.length > 0) {
+      stratHtml += '<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">'
+        + '<b style="color:var(--text-muted);">Bạn đang chơi:</b> ' + formatStrategyTags(strats.player) + '</div>';
+    }
+    breakdown += stratHtml;
+
     document.getElementById('coachProbBreakdown').innerHTML = breakdown;
 
     pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: localExplanation, reasoning: localExplanation };
@@ -2003,6 +2102,18 @@
         + ' P(loi doan DUNG) = ' + pm_bidCorrectProb + '%. P(bluff/sai) = ' + (probability * 100).toFixed(1) + '%.';
     }
 
+    // Build strategy labels for prompt
+    var strats = detectStrategies(g);
+    var stratText = '';
+    if (strats.opponent.length > 0) {
+      var oppNames = []; for (var oi = 0; oi < strats.opponent.length; oi++) { var os = STRATEGIES[strats.opponent[oi]]; if (os) oppNames.push(os.name + ': ' + os.desc); }
+      stratText += 'An Nhien dang choi kieu: ' + oppNames.join('; ') + '\n';
+    }
+    if (strats.player.length > 0) {
+      var plNames = []; for (var pi = 0; pi < strats.player.length; pi++) { var ps = STRATEGIES[strats.player[pi]]; if (ps) plNames.push(ps.name + ': ' + ps.desc); }
+      stratText += 'Nguoi choi dang choi kieu: ' + plNames.join('; ') + '\n';
+    }
+
     var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep. Day nguoi choi doc bai doi thu va tu duy chien luoc.\n\n'
       + '=== LUAT CHOI (QUAN TRONG - phai hieu dung) ===\n'
       + '- 2 nguoi choi, moi nguoi 5 xuc xac (mat 1-6). Tong 10 con tren ban.\n'
@@ -2019,6 +2130,9 @@
       + 'Luu y: xac suat nay CHUA tinh yeu to doc bai (reading). Neu doc bai tot, co the dieu chinh xac suat len/xuong.\n\n'
       + '=== LICH SU VAN (' + g.history.length + ' luot) ===\n'
       + (historyLines.length > 0 ? historyLines.join('\n') : '(chua co luot nao)') + '\n\n'
+      + '=== CHIEN LUOC NHAN DIEN ===\n'
+      + 'Thu vien chien luoc: Leo Chac (tang tu tu), Bao Lua (nhay manh), Ma Guong (bat chuoc), Doi Mat (doi face), Bay Gia (di nhe doi sap), Lua Lanh (bluff 100%), Neo Don (mo cao), Doi Khi (random), Goi Han (ep doi thu), Song Sat (nua that nua bluff)\n'
+      + (stratText || 'Chua nhan dien chien luoc cu the.\n') + '\n'
       + '=== PATTERN + SUY LUAN BAI AN NHIEN ===\n'
       + (aiPatterns.length > 0 ? aiPatterns.join('\n') + '\n' : '')
       + (handReading.summary || 'Chua co du lieu de suy luan') + '\n'
