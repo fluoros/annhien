@@ -1798,10 +1798,65 @@
 
   async function getGeminiCoachFeedback(g, action, probability, localContext) {
     var myDice = g.players[0].dice;
-    var actionText = action.action === 'liar' ? 'goi LIAR tren loi doan "' + g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' chay' : '') + '"' : 'doan "' + action.bid.quantity + ' con so ' + action.bid.faceValue + (action.bid.isChay ? ' chay' : '') + '"';
-    var currentBidText = g.currentBid ? g.currentBid.quantity + ' con so ' + g.currentBid.faceValue + (g.currentBid.isChay ? ' (chay)' : '') : 'chua co';
-    var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep. Danh gia nuoc di cua nguoi choi.\n\nTINH HUONG:\n- Xuc xac nguoi choi: [' + myDice.join(', ') + ']\n- Tong 10 con tren ban (5 an cua doi thu)\n- So 1 la wild (tru khi choi chay)\n- Loi doan hien tai tren ban: ' + currentBidText + '\n- Nguoi choi vua ' + actionText + '\n- Xac suat: ' + (probability * 100).toFixed(1) + '%\n- Context: ' + localContext + '\n\nQUAN TRONG: Dua ra goi y CHIEN LUOC cu the, khong chi giai thich tinh huong. Vi du:\n- "Nen tang nhe so mat de giu an toan va doc pattern doi thu"\n- "Day la luc nen bluff vi doi thu da tang lien tuc, co the ho dang can"\n- "Nen goi Liar vi xac suat qua thap, giu bai cho luot sau"\n- "Choi chay o day rat manh vi ban co 3 con so X"\nLuon goi y 1 nuoc di cu the tot hon (neu co).\n\nTra ve JSON:\n{\n  "whyGoodOrBad": "<giai thich TAI SAO nuoc di nay tot/te, 2-3 cau, tieng Viet>",\n  "betterMove": "<goi y nuoc di tot hon neu co, null neu nuoc di da tot>",\n  "reasoning": "<logic chi tiet>"\n}';
-    return callGemini(prompt, 'gemini-2.0-flash', 400);
+    var aiDice = g.players[1].dice;
+
+    // Build full turn history
+    var historyLines = [];
+    for (var i = 0; i < g.history.length; i++) {
+      var h = g.history[i];
+      var line = 'Luot ' + h.turn + ' [' + h.player + ']: ';
+      if (h.action === 'liar') {
+        line += 'GOI LIAR';
+      } else {
+        line += 'doan ' + h.bid.quantity + 'x' + h.bid.faceValue + (h.bid.isChay ? '(chay)' : '');
+        if (h.probability !== undefined) line += ' | xac suat hop le: ' + (h.probability * 100).toFixed(0) + '%';
+      }
+      if (h.player !== 'Ban' && h.aiAnalysis) {
+        line += ' | AI strategy: ' + h.aiAnalysis.strategy;
+      }
+      historyLines.push(line);
+    }
+
+    // Detect opponent patterns from history
+    var aiTurns = g.history.filter(function(h) { return h.player !== 'Ban' && h.action === 'bid'; });
+    var aiPatterns = [];
+    if (aiTurns.length >= 2) {
+      var lastFaces = aiTurns.slice(-3).map(function(h) { return h.bid.faceValue; });
+      var uniqueFaces = lastFaces.filter(function(v, idx, a) { return a.indexOf(v) === idx; });
+      if (uniqueFaces.length === 1) aiPatterns.push('An Nhien lap lai mat so ' + uniqueFaces[0] + ' nhieu lan lien tiep → co the dang co nhieu mat do');
+      var lastQtys = aiTurns.slice(-3).map(function(h) { return h.bid.quantity; });
+      if (lastQtys.length >= 2 && lastQtys[lastQtys.length-1] > lastQtys[0]) aiPatterns.push('An Nhien tang so luong lien tuc → dang gay ap luc hoac co bai manh');
+    }
+    var chayTurns = aiTurns.filter(function(h) { return h.bid.isChay; });
+    if (chayTurns.length > 0) aiPatterns.push('An Nhien da dung chay ' + chayTurns.length + ' lan → co the dang bao ve mat so manh');
+
+    var actionText = action.action === 'liar'
+      ? 'GOI LIAR tren loi doan "' + g.currentBid.quantity + 'x' + g.currentBid.faceValue + (g.currentBid.isChay ? ' chay' : '') + '"'
+      : 'doan ' + action.bid.quantity + 'x' + action.bid.faceValue + (action.bid.isChay ? ' (chay)' : '');
+
+    var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep, phan tich tam ly va chien luoc sau.\n\n'
+      + '=== BAI CUA NGUOI CHOI ===\n'
+      + 'Xuc xac Ban: [' + myDice.join(', ') + '] (so 1 = wild)\n'
+      + 'Xuc xac An Nhien (bi an - chi coach biet): [' + aiDice.join(', ') + ']\n'
+      + 'Tong 10 con tren ban.\n\n'
+      + '=== LICH SU VAN (' + g.history.length + ' luot) ===\n'
+      + (historyLines.length > 0 ? historyLines.join('\n') : '(chua co luot nao)') + '\n\n'
+      + '=== PATTERN DOI THU ===\n'
+      + (aiPatterns.length > 0 ? aiPatterns.join('\n') : 'Chua du du lieu de doc pattern') + '\n\n'
+      + '=== NUOC DI CAN DANH GIA ===\n'
+      + 'Luot ' + (g.history.length + 1) + ': Nguoi choi vua ' + actionText + '\n'
+      + 'Xac suat nuoc di nay thanh cong: ' + (probability * 100).toFixed(1) + '%\n'
+      + 'Loi doan hien tren ban: ' + (g.currentBid ? g.currentBid.quantity + 'x' + g.currentBid.faceValue + (g.currentBid.isChay ? '(chay)' : '') : 'chua co') + '\n\n'
+      + '=== YEU CAU PHAN TICH ===\n'
+      + 'Phan tich 3 goc do:\n'
+      + '1. TAM LY: nuoc di nay truyen tin hieu gi cho doi thu? An Nhien se suy dien the nao?\n'
+      + '2. CHIEN LUOC: nuoc di co phu hop voi pattern + bai trong tay khong?\n'
+      + '3. GOI Y: neu co nuoc di tot hon, neu ro cu the (so luong + mat so)\n'
+      + 'Viet tieng Viet, ngan gon 2-3 cau moi phan.\n\n'
+      + 'Tra ve JSON:\n'
+      + '{"whyGoodOrBad":"<phan tich tam ly+chien luoc>","betterMove":"<goi y nuoc di cu the hoac null>","reasoning":"<logic ngan gon>"}';
+
+    return callGemini(prompt, 'gemini-2.0-flash', 600);
   }
 
   function doReveal() {
