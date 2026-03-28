@@ -1984,32 +1984,57 @@
       ? 'GOI LIAR tren loi doan "' + g.currentBid.quantity + 'x' + g.currentBid.faceValue + (g.currentBid.isChay ? ' chay' : '') + '"'
       : 'doan ' + action.bid.quantity + 'x' + action.bid.faceValue + (action.bid.isChay ? ' (chay)' : '');
 
-    var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep, phan tich tam ly va chien luoc sau.\n\n'
-      + '=== BAI CUA NGUOI CHOI ===\n'
-      + 'Xuc xac Ban: [' + myDice.join(', ') + '] (so 1 = wild)\n'
-      + 'Xuc xac An Nhien (bi an - chi coach biet): [' + aiDice.join(', ') + ']\n'
-      + 'Tong 10 con tren ban.\n\n'
+    // Build probability math explanation for Gemini
+    var probMath = '';
+    if (action.action === 'bid') {
+      var pm_myCount = countDice(myDice, action.bid.faceValue, action.bid.isChay);
+      var pm_needed = Math.max(0, action.bid.quantity - pm_myCount);
+      var pm_p = action.bid.isChay ? '1/6' : '2/6';
+      probMath = 'Nguoi choi co ' + pm_myCount + ' con so ' + action.bid.faceValue + (action.bid.isChay ? ' (chay)' : ' (gom wild)')
+        + '. Can them ' + pm_needed + ' con tu 5 con An Nhien. Moi con co xac suat ' + pm_p + ' khop.'
+        + ' P(An Nhien co >=' + pm_needed + ' con) = ' + (probability * 100).toFixed(1) + '% (binomial).';
+    } else {
+      var pm_bid = g.currentBid;
+      var pm_myLiarCount = countDice(myDice, pm_bid.faceValue, pm_bid.isChay);
+      var pm_liarNeeded = Math.max(0, pm_bid.quantity - pm_myLiarCount);
+      var pm_bidCorrectProb = ((1 - probability) * 100).toFixed(1);
+      probMath = 'Loi doan: ' + pm_bid.quantity + 'x' + pm_bid.faceValue + (pm_bid.isChay ? '(chay)' : '')
+        + '. Nguoi choi co ' + pm_myLiarCount + ' con khop, An Nhien can ' + pm_liarNeeded + ' con.'
+        + ' P(loi doan DUNG) = ' + pm_bidCorrectProb + '%. P(bluff/sai) = ' + (probability * 100).toFixed(1) + '%.';
+    }
+
+    var prompt = 'Ban la coach Liar\'s Dice chuyen nghiep. Day nguoi choi doc bai doi thu va tu duy chien luoc.\n\n'
+      + '=== LUAT CHOI (QUAN TRONG - phai hieu dung) ===\n'
+      + '- 2 nguoi choi, moi nguoi 5 xuc xac (mat 1-6). Tong 10 con tren ban.\n'
+      + '- So 1 la WILD: dem nhu bat ky mat 2-6 nao. VD: [1,3,3,5,6] co 3 con so 3 (2 mat 3 + 1 wild).\n'
+      + '- Choi CHAY: KHONG tinh wild, chi dem dung mat so. Wild mat tac dung.\n'
+      + '- Loi doan sau phai MANH HON truoc: tang so luong, HOAC giu so luong + tang mat so.\n'
+      + '- Khi chuyen tu thuong sang chay: so luong >= ceil(bid_truoc / 2). Khi da chay, luot sau phai x2 so luong.\n'
+      + '- Goi LIAR = nghi loi doan truoc sai. Neu dung la sai → nguoi goi thang. Neu loi doan dung → nguoi goi thua.\n\n'
+      + '=== BAI TREN BAN ===\n'
+      + 'Xuc xac nguoi choi: [' + myDice.join(', ') + ']\n'
+      + 'Xuc xac An Nhien (BI AN voi nguoi choi, chi coach biet): [' + aiDice.join(', ') + ']\n\n'
+      + '=== TOAN XAC SUAT ===\n'
+      + probMath + '\n'
+      + 'Luu y: xac suat nay CHUA tinh yeu to doc bai (reading). Neu doc bai tot, co the dieu chinh xac suat len/xuong.\n\n'
       + '=== LICH SU VAN (' + g.history.length + ' luot) ===\n'
       + (historyLines.length > 0 ? historyLines.join('\n') : '(chua co luot nao)') + '\n\n'
-      + '=== PATTERN DOI THU ===\n'
-      + (aiPatterns.length > 0 ? aiPatterns.join('\n') : 'Chua du du lieu de doc pattern') + '\n\n'
+      + '=== PATTERN + SUY LUAN BAI AN NHIEN ===\n'
+      + (aiPatterns.length > 0 ? aiPatterns.join('\n') + '\n' : '')
+      + (handReading.summary || 'Chua co du lieu de suy luan') + '\n'
+      + 'Bai THAT cua An Nhien (chi coach biet, tuyet doi KHONG tiet lo): [' + aiDice.join(', ') + ']\n'
+      + 'Hay so sanh suy luan tu lich su vs bai that de nhan xet nguoi choi doc bai tot/chua tot.\n\n'
       + '=== NUOC DI CAN DANH GIA ===\n'
       + 'Luot ' + (g.history.length + 1) + ': Nguoi choi vua ' + actionText + '\n'
-      + 'Xac suat nuoc di nay thanh cong: ' + (probability * 100).toFixed(1) + '%\n'
       + 'Loi doan hien tren ban: ' + (g.currentBid ? g.currentBid.quantity + 'x' + g.currentBid.faceValue + (g.currentBid.isChay ? '(chay)' : '') : 'chua co') + '\n\n'
-      + '=== SUY LUAN BAI DOI THU (tu lich su bid) ===\n'
-      + (handReading.summary || 'Chua co du lieu de suy luan') + '\n'
-      + 'Bai that cua An Nhien (chi coach biet, KHONG tiet lo truc tiep): [' + aiDice.join(', ') + ']\n'
-      + 'So sanh suy luan vs bai that de danh gia nguoi choi dang doc bai tot hay khong.\n\n'
-      + '=== YEU CAU PHAN TICH ===\n'
-      + 'Phan tich 4 goc do:\n'
-      + '1. DOC BAI: dua tren lich su bid cua An Nhien, co the suy luan gi ve bai cua co ay? Suy luan nay dung hay sai so voi thuc te? Day nguoi choi cach doc bai tu hanh vi bid.\n'
-      + '2. TAM LY: nuoc di nay truyen tin hieu gi? An Nhien co dang bluff, gay ap luc, hay choi that?\n'
-      + '3. CHIEN LUOC: nuoc di co phu hop voi bai trong tay + suy luan ve bai doi thu khong?\n'
-      + '4. GOI Y: neu co nuoc di tot hon, neu ro cu the (so luong + mat so). Giai thich tai sao tot hon dua tren doc bai.\n'
-      + 'Viet tieng Viet, ngan gon 2-3 cau moi phan. KHONG tiet lo bai that cua An Nhien, chi phan tich tu goc doc bai.\n\n'
-      + 'Tra ve JSON:\n'
-      + '{"whyGoodOrBad":"<phan tich doc bai + tam ly + chien luoc, gop chung>","betterMove":"<goi y nuoc di cu the hoac null>","reasoning":"<logic ngan gon>"}';
+      + '=== YEU CAU PHAN TICH (viet tieng Viet, ngan gon) ===\n'
+      + '1. DOC BAI: Tu lich su bid cua An Nhien, nguoi choi nen suy luan gi? Suy luan dung bao nhieu % so voi bai that? Day meo doc bai cu the.\n'
+      + '2. TAM LY: Nuoc di nay truyen tin hieu gi cho An Nhien? Co ay se nghi nguoi choi manh hay yeu? An Nhien dang bluff hay choi that?\n'
+      + '3. XAC SUAT: Giai thich xac suat ' + (probability * 100).toFixed(0) + '% co nghia gi trong thuc te. Ket hop voi doc bai thi xac suat that su cao hon hay thap hon?\n'
+      + '4. GOI Y: Neu co nuoc di tot hon → neu cu the so luong + mat so. Giai thich TAI SAO tot hon (dua tren ca xac suat + doc bai + tam ly).\n'
+      + 'KHONG tiet lo bai that An Nhien. Chi phan tich tu goc nguoi choi co the nhin thay.\n\n'
+      + 'JSON:\n'
+      + '{"whyGoodOrBad":"<phan tich gop 4 goc do tren, 3-5 cau>","betterMove":"<goi y cu the hoac null>","reasoning":"<logic 1-2 cau>"}';
 
     return callGemini(prompt, 'gemini-2.0-flash', 600);
   }
@@ -2164,6 +2189,7 @@
         }
         html += '</div>';
       }
+      if (analysis.handReadingScore) html += '<div class="lesson-section"><h4>\uD83C\uDFAF Kh\u1EA3 n\u0103ng \u0111\u1ECDc bài</h4><div class="lesson-item" style="border-left:3px solid var(--warning);padding-left:16px;">' + analysis.handReadingScore + '</div></div>';
       if (analysis.patterns) html += '<div class="lesson-section"><h4>\uD83D\uDCCA Xu h\u01B0\u1EDBng ch\u01A1i</h4><div class="lesson-item">' + analysis.patterns + '</div></div>';
       if (analysis.lessonLearned) html += '<div class="lesson-section"><h4>\uD83D\uDCDD Bài h\u1ECDc</h4><div class="lesson-item">' + analysis.lessonLearned + '</div></div>';
       if (analysis.actionableTip) html += '<div class="lesson-section"><h4>\uD83D\uDCA1 Tip cho ván sau</h4><div class="lesson-item" style="border-left:3px solid var(--accent);padding-left:16px;">' + analysis.actionableTip + '</div></div>';
@@ -2183,16 +2209,50 @@
       if (h.aiAnalysis) line += ' [' + h.aiAnalysis.strategy + ' p=' + (h.aiAnalysis.probability*100).toFixed(0) + '%]';
       historyLines.push(line);
     }
+    // Build hand reading for analysis context
+    var endReading = readOpponentHand(g);
+    var diffLabels = { medium: 'Easy', hard: 'Medium', expert: 'Hard' };
+
+    // Collect coach feedback from history
+    var coachNotes = [];
+    for (var ci = 0; ci < g.history.length; ci++) {
+      var ch = g.history[ci];
+      if (ch.coachFeedback && ch.coachFeedback.whyGoodOrBad) {
+        coachNotes.push('L' + ch.turn + ' [' + ch.coachFeedback.rating + ']: ' + ch.coachFeedback.whyGoodOrBad.replace(/<[^>]*>/g, '').slice(0, 100));
+      }
+    }
+
     var prompt = 'Ban la thay day Liar Dice lao luyen 20 nam kinh nghiem. Phan tich van dau nay nhu dang day hoc tro.\n\n'
+      + '=== LUAT CHOI ===\n'
+      + '- 2 nguoi, moi nguoi 5 xuc xac (mat 1-6). Tong 10 con.\n'
+      + '- So 1 = WILD (tinh nhu bat ky mat 2-6). Chay = khong tinh wild.\n'
+      + '- Bid sau phai manh hon: tang so luong HOAC giu so luong + tang mat so.\n'
+      + '- Goi LIAR = nghi bid truoc sai. Dung → nguoi goi thang. Sai → nguoi goi thua.\n\n'
+      + '=== THONG TIN VAN ===\n'
+      + 'Cap do: ' + diffLabels[g.difficulty] + '\n'
       + 'Ket qua: ' + (result.winnerIndex === 0 ? 'Nguoi choi THANG' : 'Nguoi choi THUA') + '\n'
-      + 'Xuc xac nguoi choi: [' + g.players[0].dice.join(',') + ']\n'
-      + 'Xuc xac An Nhien: [' + g.players[1].dice.join(',') + ']\n'
-      + 'Luat: So 1 la wild (tru chay). Thua la bi loai.\n\n'
-      + 'Dien bien:\n' + historyLines.join('\n') + '\n\n'
-      + 'Mo bai: ' + result.lastBid.quantity + 'x' + result.lastBid.faceValue + (result.lastBid.isChay ? ' chay' : '') + ' thuc te=' + result.actualCount + ' -> ' + (result.bidCorrect ? 'DUNG' : 'SAI') + '\n\n'
-      + 'Viet tieng Viet. Giu cau ngan gon (moi cau duoi 50 tu). Tra ve JSON:\n'
-      + '{"summary":"tom tat 2 cau","keyMistakes":[{"turn":1,"whatYouDid":"mo ta","whatShouldDo":"goi y","whyItMatters":"ly do"}],"goodDecisions":[{"turn":1,"whatYouDid":"mo ta","whyItWasGood":"ly do"}],"anNhienStrategy":[{"turn":1,"whatSheDid":"mo ta","whySmart":"giai thich","whatToLearn":"bai hoc"}],"patterns":"xu huong","lessonLearned":"bai hoc chinh","actionableTip":"1 meo cu the"}\n\n'
-      + 'Luu y: anNhienStrategy la phan QUAN TRONG NHAT. Phan tich tu goc nhin chien luoc gia: khi nao bluff, khi nao goi liar, doc pattern doi thu, tinh xac suat, ap luc tam ly. Day nguoi choi tu duy nhu cao thu.';
+      + 'Xuc xac nguoi choi: [' + g.players[0].dice.join(', ') + ']\n'
+      + 'Xuc xac An Nhien: [' + g.players[1].dice.join(', ') + ']\n\n'
+      + '=== DIEN BIEN (' + g.history.length + ' luot) ===\n'
+      + historyLines.join('\n') + '\n\n'
+      + '=== KET THUC ===\n'
+      + 'Mo bai: ' + result.lastBid.quantity + 'x' + result.lastBid.faceValue + (result.lastBid.isChay ? ' chay' : '') + ' | thuc te co ' + result.actualCount + ' con → ' + (result.bidCorrect ? 'DUNG' : 'SAI') + '\n\n'
+      + '=== DOC BAI DOI THU (suy luan tu lich su bid) ===\n'
+      + (endReading.summary || 'Khong co du lieu') + '\n'
+      + 'Bai that An Nhien: [' + g.players[1].dice.join(', ') + ']. So sanh de danh gia kha nang doc bai.\n\n'
+      + (coachNotes.length > 0 ? '=== GOI Y COACH TRONG VAN ===\n' + coachNotes.join('\n') + '\n\n' : '')
+      + '=== YEU CAU ===\n'
+      + 'Viet tieng Viet, ngan gon (moi cau duoi 50 tu). Tra ve JSON:\n'
+      + '{"summary":"tom tat 2 cau",'
+      + '"keyMistakes":[{"turn":1,"whatYouDid":"mo ta","whatShouldDo":"goi y","whyItMatters":"ly do"}],'
+      + '"goodDecisions":[{"turn":1,"whatYouDid":"mo ta","whyItWasGood":"ly do"}],'
+      + '"anNhienStrategy":[{"turn":1,"whatSheDid":"mo ta","whySmart":"giai thich","whatToLearn":"bai hoc"}],'
+      + '"handReadingScore":"<danh gia kha nang doc bai cua nguoi choi: tot/trung binh/can cai thien + giai thich>",'
+      + '"patterns":"xu huong choi cua nguoi choi",'
+      + '"lessonLearned":"bai hoc chinh",'
+      + '"actionableTip":"1 meo cu the cho van sau"}\n\n'
+      + 'anNhienStrategy la phan QUAN TRONG NHAT: khi nao bluff, khi nao goi liar, doc pattern, tinh xac suat, ap luc tam ly. Day nguoi choi tu duy nhu cao thu.\n'
+      + 'handReadingScore: so sanh suy luan bai doi thu voi bai THAT cua An Nhien. Nguoi choi co doc dung khong?';
     return callGemini(prompt, 'gemini-2.0-flash', 1200);
   }
 
