@@ -1750,6 +1750,100 @@
     return { action: 'bid', bid: bid, reasoning: result.reasoning || '', aiAnalysis: { strategy: 'Gemini AI', probability: bProb, diceSummary: ds, thinking: (result.reasoning || 'Gemini quyết \u0111\u1ECBnh') + ' | Xác su\u1EA5t: ' + (bProb * 100).toFixed(0) + '%.' } };
   }
 
+  function readOpponentHand(g) {
+    var aiTurns = g.history.filter(function(h) { return h.player !== 'B\u1EA1n' && h.action === 'bid'; });
+    var lines = [];
+    var inferences = {}; // face → {confidence: 0-1, reason: string}
+
+    if (aiTurns.length === 0) return { lines: [], inferences: inferences, summary: '' };
+
+    // Track which faces An Nhiên has bid on and how
+    var faceBids = {}; // face → [{qty, turn, isChay}]
+    for (var i = 0; i < aiTurns.length; i++) {
+      var t = aiTurns[i];
+      var f = t.bid.faceValue;
+      if (!faceBids[f]) faceBids[f] = [];
+      faceBids[f].push({ qty: t.bid.quantity, turn: t.turn, isChay: t.bid.isChay });
+    }
+
+    var faces = Object.keys(faceBids);
+
+    // Rule 1: Repeated same face = likely has it
+    for (var fi = 0; fi < faces.length; fi++) {
+      var face = parseInt(faces[fi]);
+      var bids = faceBids[face];
+      if (bids.length >= 2) {
+        var maxQty = 0;
+        for (var bi = 0; bi < bids.length; bi++) if (bids[bi].qty > maxQty) maxQty = bids[bi].qty;
+        var est = Math.min(5, Math.ceil(maxQty * 0.5));
+        inferences[face] = { count: est, confidence: 0.8, reason: 'lặp lại' };
+        lines.push('Số <b>' + face + '</b>: kêu <b>' + bids.length + ' lần</b>, lên tới ' + maxQty + ' con → nhiều khả năng có <b>' + est + ' con</b>');
+      } else if (bids.length === 1) {
+        // Single bid: moderate confidence
+        var singleQty = bids[0].qty;
+        var singleEst = Math.min(5, Math.max(1, Math.ceil(singleQty * 0.4)));
+        inferences[face] = { count: singleEst, confidence: 0.4, reason: 'kêu 1 lần' };
+      }
+    }
+
+    // Rule 2: Chay = very likely has multiples (no wild backup)
+    for (var ci = 0; ci < aiTurns.length; ci++) {
+      var ct = aiTurns[ci];
+      if (ct.bid.isChay) {
+        var chayFace = ct.bid.faceValue;
+        var chayEst = Math.min(5, Math.max(2, Math.ceil(ct.bid.quantity * 0.6)));
+        inferences[chayFace] = { count: chayEst, confidence: 0.9, reason: 'chơi chay' };
+        lines.push('Số <b>' + chayFace + '</b>: chơi <b>chay</b> (không wild) → rất có thể có <b>' + chayEst + '+ con</b>');
+      }
+    }
+
+    // Rule 3: Face switch = new suit might be strong
+    if (aiTurns.length >= 2) {
+      var prevFace = aiTurns[aiTurns.length - 2].bid.faceValue;
+      var currFace = aiTurns[aiTurns.length - 1].bid.faceValue;
+      if (prevFace !== currFace) {
+        lines.push('Đổi từ số ' + prevFace + ' sang <b>số ' + currFace + '</b> → có thể đang chuyển sang bài mạnh hơn, hoặc bluff');
+      }
+    }
+
+    // Rule 4: Aggressive quantity jumps = confidence or desperation
+    if (aiTurns.length >= 2) {
+      var prev = aiTurns[aiTurns.length - 2];
+      var curr = aiTurns[aiTurns.length - 1];
+      var qtyJump = curr.bid.quantity - prev.bid.quantity;
+      if (qtyJump >= 2) {
+        lines.push('Tăng <b>+' + qtyJump + ' con</b> trong 1 lượt → đang tự tin hoặc cố gây áp lực (bluff?)');
+      } else if (qtyJump === 0 && curr.bid.faceValue > prev.bid.faceValue) {
+        lines.push('Giữ số lượng, chỉ tăng mặt số → nước đi an toàn, có thể đang thận trọng');
+      }
+    }
+
+    // Rule 5: First turn opener analysis
+    if (aiTurns.length === 1) {
+      var opener = aiTurns[0];
+      if (opener.bid.quantity <= 3) {
+        lines.push('Mở đầu nhẹ (' + opener.bid.quantity + ' con) → chưa rõ bài, có thể đang thăm dò');
+      } else {
+        lines.push('Mở đầu mạnh (' + opener.bid.quantity + ' con số ' + opener.bid.faceValue + ') → tự tin hoặc bluff ngay từ đầu');
+      }
+    }
+
+    // Build summary for Gemini
+    var summary = '';
+    var infFaces = Object.keys(inferences);
+    if (infFaces.length > 0) {
+      var parts = [];
+      for (var si = 0; si < infFaces.length; si++) {
+        var sf = infFaces[si];
+        var inf = inferences[sf];
+        parts.push('so ' + sf + ': ~' + inf.count + ' con (' + inf.reason + ', tin cay ' + (inf.confidence * 100).toFixed(0) + '%)');
+      }
+      summary = 'Suy luan bai An Nhien: ' + parts.join(', ');
+    }
+
+    return { lines: lines, inferences: inferences, summary: summary };
+  }
+
   async function showCoachFeedback(action) {
     var g = state.game, panel = document.getElementById('coachPanel'), probability = action.probability;
     var rating; if (probability >= 0.7) rating = 'excellent'; else if (probability >= 0.5) rating = 'good'; else if (probability >= 0.3) rating = 'risky'; else rating = 'bad';
@@ -1817,6 +1911,14 @@
         + '<br>Mỗi con có ' + bc_liarPEach + ' khả năng khớp → lời đoán ĐÚNG: <b>' + (bc_bidProb * 100).toFixed(0) + '%</b>'
         + ' · An Nhiên đang bluff: <b style="color:' + (probability >= 0.5 ? 'var(--success)' : 'var(--warning)') + '">' + (probability * 100).toFixed(0) + '%</b>';
     }
+    // ── Opponent hand reading ────────────────────────────────────────────────
+    var reading = readOpponentHand(g);
+    if (reading.lines.length > 0) {
+      breakdown += '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">'
+        + '<b style="color:var(--accent);">Đọc bài An Nhiên:</b><br>'
+        + reading.lines.join('<br>') + '</div>';
+    }
+
     document.getElementById('coachProbBreakdown').innerHTML = breakdown;
 
     pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: localExplanation, reasoning: localExplanation };
@@ -1846,6 +1948,7 @@
   async function getGeminiCoachFeedback(g, action, probability, localContext) {
     var myDice = g.players[0].dice;
     var aiDice = g.players[1].dice;
+    var handReading = readOpponentHand(g);
 
     // Build full turn history
     var historyLines = [];
@@ -1894,14 +1997,19 @@
       + 'Luot ' + (g.history.length + 1) + ': Nguoi choi vua ' + actionText + '\n'
       + 'Xac suat nuoc di nay thanh cong: ' + (probability * 100).toFixed(1) + '%\n'
       + 'Loi doan hien tren ban: ' + (g.currentBid ? g.currentBid.quantity + 'x' + g.currentBid.faceValue + (g.currentBid.isChay ? '(chay)' : '') : 'chua co') + '\n\n'
+      + '=== SUY LUAN BAI DOI THU (tu lich su bid) ===\n'
+      + (handReading.summary || 'Chua co du lieu de suy luan') + '\n'
+      + 'Bai that cua An Nhien (chi coach biet, KHONG tiet lo truc tiep): [' + aiDice.join(', ') + ']\n'
+      + 'So sanh suy luan vs bai that de danh gia nguoi choi dang doc bai tot hay khong.\n\n'
       + '=== YEU CAU PHAN TICH ===\n'
-      + 'Phan tich 3 goc do:\n'
-      + '1. TAM LY: nuoc di nay truyen tin hieu gi cho doi thu? An Nhien se suy dien the nao?\n'
-      + '2. CHIEN LUOC: nuoc di co phu hop voi pattern + bai trong tay khong?\n'
-      + '3. GOI Y: neu co nuoc di tot hon, neu ro cu the (so luong + mat so)\n'
-      + 'Viet tieng Viet, ngan gon 2-3 cau moi phan.\n\n'
+      + 'Phan tich 4 goc do:\n'
+      + '1. DOC BAI: dua tren lich su bid cua An Nhien, co the suy luan gi ve bai cua co ay? Suy luan nay dung hay sai so voi thuc te? Day nguoi choi cach doc bai tu hanh vi bid.\n'
+      + '2. TAM LY: nuoc di nay truyen tin hieu gi? An Nhien co dang bluff, gay ap luc, hay choi that?\n'
+      + '3. CHIEN LUOC: nuoc di co phu hop voi bai trong tay + suy luan ve bai doi thu khong?\n'
+      + '4. GOI Y: neu co nuoc di tot hon, neu ro cu the (so luong + mat so). Giai thich tai sao tot hon dua tren doc bai.\n'
+      + 'Viet tieng Viet, ngan gon 2-3 cau moi phan. KHONG tiet lo bai that cua An Nhien, chi phan tich tu goc doc bai.\n\n'
       + 'Tra ve JSON:\n'
-      + '{"whyGoodOrBad":"<phan tich tam ly+chien luoc>","betterMove":"<goi y nuoc di cu the hoac null>","reasoning":"<logic ngan gon>"}';
+      + '{"whyGoodOrBad":"<phan tich doc bai + tam ly + chien luoc, gop chung>","betterMove":"<goi y nuoc di cu the hoac null>","reasoning":"<logic ngan gon>"}';
 
     return callGemini(prompt, 'gemini-2.0-flash', 600);
   }
