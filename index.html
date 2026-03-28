@@ -797,6 +797,7 @@
           <span class="rating-text" id="coachRating"></span>
           <span class="probability" id="coachProb"></span>
         </div>
+        <div id="coachProbBreakdown" style="font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);border-radius:6px;padding:8px 10px;margin-bottom:10px;line-height:1.6;"></div>
         <div class="coach-body" id="coachBody"></div>
         <div class="coach-actions">
           <button class="btn btn-ghost" id="btnRetake">&#272;oán l&#7841;i</button>
@@ -1772,6 +1773,52 @@
     document.getElementById('coachIcon').textContent = icons[rating];
     document.getElementById('coachRating').textContent = labels[rating];
     document.getElementById('coachProb').textContent = '(' + (probability * 100).toFixed(0) + '%)';
+
+    // ── Probability breakdown explanation ────────────────────────────────────
+    var breakdown = '';
+    var aiDiceCount = g.players[1].dice.length;
+    if (action.action === 'bid') {
+      var bc_myCount = countDice(myDice, action.bid.faceValue, action.bid.isChay);
+      var bc_wilds = action.bid.isChay ? 0 : myDice.filter(function(d) { return d === 1; }).length;
+      var bc_pure = bc_myCount - bc_wilds;
+      var bc_needed = Math.max(0, action.bid.quantity - bc_myCount);
+      var bc_pEach = action.bid.isChay ? '1/6 ≈ 17%' : '2/6 ≈ 33%';
+      var bc_diceLabel = action.bid.isChay
+        ? 'Bạn có <b>' + bc_myCount + ' con số ' + action.bid.faceValue + '</b> (chay, không tính wild)'
+        : (bc_pure > 0 && bc_wilds > 0)
+          ? 'Bạn có <b>' + bc_pure + ' con số ' + action.bid.faceValue + ' + ' + bc_wilds + ' wild</b> = <b>' + bc_myCount + ' con khớp</b>'
+          : bc_wilds > 0
+            ? 'Bạn có <b>' + bc_wilds + ' wild</b> (tính là số ' + action.bid.faceValue + ')'
+            : 'Bạn có <b>' + bc_myCount + ' con số ' + action.bid.faceValue + '</b>';
+      if (bc_needed <= 0) {
+        breakdown = bc_diceLabel + ' — đủ rồi, không cần An Nhiên → xác suất <b style="color:var(--success)">100%</b>';
+      } else {
+        breakdown = bc_diceLabel
+          + '<br>Cần thêm <b>' + bc_needed + ' con</b> từ <b>' + aiDiceCount + ' con ẩn của An Nhiên</b>'
+          + '<br>Mỗi con An Nhiên có ' + bc_pEach + ' khả năng khớp'
+          + ' → Xác suất An Nhiên có đủ ' + bc_needed + '+ con: <b>' + (probability * 100).toFixed(0) + '%</b>';
+      }
+    } else {
+      // Liar action
+      var lb = g.currentBid;
+      var bc_myLiarCount = countDice(myDice, lb.faceValue, lb.isChay);
+      var bc_liarWilds = lb.isChay ? 0 : myDice.filter(function(d) { return d === 1; }).length;
+      var bc_liarPure = bc_myLiarCount - bc_liarWilds;
+      var bc_liarNeeded = Math.max(0, lb.quantity - bc_myLiarCount);
+      var bc_liarPEach = lb.isChay ? '1/6 ≈ 17%' : '2/6 ≈ 33%';
+      var bc_bidProb = (1 - probability); // probability that the bid IS correct
+      var bc_liarDiceLabel = lb.isChay
+        ? 'Bạn có <b>' + bc_myLiarCount + ' con số ' + lb.faceValue + '</b>'
+        : (bc_liarPure > 0 && bc_liarWilds > 0)
+          ? 'Bạn có <b>' + bc_liarPure + ' con số ' + lb.faceValue + ' + ' + bc_liarWilds + ' wild = ' + bc_myLiarCount + ' con khớp</b>'
+          : 'Bạn có <b>' + bc_myLiarCount + ' con số ' + lb.faceValue + '</b>';
+      breakdown = 'Lời đoán cần kiểm tra: <b>' + lb.quantity + ' con số ' + lb.faceValue + (lb.isChay ? ' (chay)' : '') + '</b>'
+        + '<br>' + bc_liarDiceLabel + ', An Nhiên cần <b>' + bc_liarNeeded + ' con</b> trong ' + aiDiceCount + ' con'
+        + '<br>Mỗi con có ' + bc_liarPEach + ' khả năng khớp → lời đoán ĐÚNG: <b>' + (bc_bidProb * 100).toFixed(0) + '%</b>'
+        + ' · An Nhiên đang bluff: <b style="color:' + (probability >= 0.5 ? 'var(--success)' : 'var(--warning)') + '">' + (probability * 100).toFixed(0) + '%</b>';
+    }
+    document.getElementById('coachProbBreakdown').innerHTML = breakdown;
+
     pendingAction.coachFeedback = { rating: rating, probability: probability, whyGoodOrBad: localExplanation, reasoning: localExplanation };
 
     // Show panel once: spinner if API key available, otherwise show local immediately
